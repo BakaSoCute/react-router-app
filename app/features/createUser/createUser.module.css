@@ -1,0 +1,12 @@
+/* .input,.button{
+    padding: 10px;
+    border: 2px solid blueviolet;
+    border-radius: 10px;
+    background-color: aqua;
+    color: black;
+} */
+.container{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
