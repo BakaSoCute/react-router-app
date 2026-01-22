@@ -1,15 +1,17 @@
 import {
   Links,
-  Link,
   Meta,
   Outlet,
   Scripts,
   ScrollRestoration,
+  NavLink,
 } from "react-router";
 
 import s from "./app.module.css";
 import { Provider } from "react-redux";
 import { store } from "./store/store";
+import { useNavigation } from "react-router";
+import { GlobalSpiner } from "./features/globalSpiner";
 
 
 
@@ -24,9 +26,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <header className={s.header}>
-          <Link to={"/"}>HomePage</Link>
-          <Link to={"/addUser"}>AddUser</Link>
-          <Link to={"/context/about"}>About</Link>
+          <NavLink className={s.nav} to={"/"}>HomePage</NavLink>
+          <NavLink className={s.nav} to={"/addUser"}>AddUser</NavLink>
+          <NavLink className={s.nav} to={"/context/posts"}>Posts</NavLink>
         </header>
 
         {children}
@@ -38,8 +40,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  const navigation = useNavigation()
+  const isNavgation = Boolean(navigation.location)
   return (
   <Provider store={store}>
+    {isNavgation && <GlobalSpiner />}
     <Outlet />
   </Provider>
   )

@@ -9,7 +9,7 @@ import {
   selectStatus,
 } from './counterSlice';
 import { useGetPostsQuery, useGetUsersQuery } from '../../api/api';
-import { CreateUser } from '../createUser/createUser';
+import s from "./Counter.module.css"
 
 export const Counter: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -21,31 +21,24 @@ export const Counter: React.FC = () => {
     skip:false,
     refetchOnMountOrArgChange: false
   })
-  const { data: posts = []} = useGetPostsQuery(1,{
-    pollingInterval: Infinity,
-    skip:false,
-    refetchOnMountOrArgChange: false
-  })
+
 
   return (
-    <div>
+    <div className={s.container}>
       <h2>Counter: {count}</h2>
       <h2>Status: {status}</h2>
-      <p>Users:{users.map((user) => (
-        <li key={user.id}>{user.name}--- Phone:{user.phone}</li>
+      <ul className={s.users}>
+        <p>Users:</p>
+          {users.map((user) => (
+          <li key={user.id}>{user.name}--- Phone:{user.phone}</li>
         ))}
-      </p>
-      <span>
-        Posts: {posts.map((post) => (
-          <li key={post.id}>{post.title} --- {post.body}</li>
-        ))}
-      </span>
-      <div>
+      </ul>
+      <div className={s.buttons}>
         <button onClick={() => dispatch(increment())}>+</button>
         <button onClick={() => dispatch(decrement())}>-</button>
         <button onClick={() => dispatch(reset())}>Reset</button>
       </div>
-      <div>
+      <div className={s.inputByInc}>
         <input
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
