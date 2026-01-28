@@ -27,8 +27,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <body>
         <header className={s.header}>
           <NavLink className={s.nav} to={"/"}>HomePage</NavLink>
-          <NavLink className={s.nav} to={"/addUser"}>AddUser</NavLink>
+          <NavLink className={s.nav} to={"/add-bot"}>Add-Bot</NavLink>
           <NavLink className={s.nav} to={"/context/posts"}>Posts</NavLink>
+          <NavLink className={s.nav} to={"/login"}>Войти в аккаунт</NavLink>
         </header>
 
         {children}

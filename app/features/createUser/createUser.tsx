@@ -1,10 +1,13 @@
-import { useState } from "react"
-import { useCreateUserMutation, useGetUsersQuery } from "../../api/api"
+import React, { useState } from "react"
+import { useAddUserMutation, useCreateUserMutation, useGetUsersQuery } from "../../api/api"
 import s from "./createUser.module.css"
+
 
 export const CreateUser: React.FC = () => {
     const [createUser, {isError,isLoading,isSuccess,error} ] = useCreateUserMutation()
+    const [ addUser] = useAddUserMutation()
     const [formData, setFormData] = useState({name: "",email: "" })
+    const [id, setId] = useState({channelId: ""})
     const {data: users= []} = useGetUsersQuery()
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -19,6 +22,16 @@ export const CreateUser: React.FC = () => {
             console.error("error create user:", err)
         }
     }
+    const handleSubmitTo = async (e:React.FormEvent) => {
+        e.preventDefault()
+        try {
+            await addUser(id).unwrap()
+            setId({channelId:""})
+        } catch (err) {
+            console.error("error add user:", err)
+        }
+    }
+    
 
     return(
         <div>
@@ -40,6 +53,15 @@ export const CreateUser: React.FC = () => {
                 <button type="submit" disabled={isLoading} className={s.button}>
                     {isLoading? "Создание..." : "Создать"}
                 </button>
+            </form>
+            <form className={s.container} onSubmit={handleSubmitTo}>
+                <input type="text"
+                className={s.input}
+                placeholder="Id"
+                value={id.channelId}
+                onChange={(e) => setId({...id, channelId: e.target.value})}
+                 />
+                 <button>Добавить</button>
             </form>
 
             {isSuccess && <div>Пользователь создан</div>}

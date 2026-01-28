@@ -7,6 +7,8 @@ body {
   background: linear-gradient(100deg, #0ca1a1,#075c94);
   color:rgb(255, 255, 255);
   font-family: sans-serif;
+  min-width: 100vw;
+  min-height: 100vh;
 
 }
 .header{
