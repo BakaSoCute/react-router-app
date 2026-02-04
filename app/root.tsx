@@ -1,52 +1,60 @@
 import {
-  Links,
-  Meta,
   Outlet,
-  Scripts,
-  ScrollRestoration,
-  NavLink,
+  redirect
 } from "react-router";
 
-import s from "./app.module.css";
+
 import { Provider } from "react-redux";
 import { store } from "./store/store";
 import { useNavigation } from "react-router";
 import { GlobalSpiner } from "./features/globalSpiner";
+import { Layout } from "./Layout";
+import { Navigation } from "./Navigate";
+import { useRefreshTokenQuery, useValidUserQuery } from "./api/api";
 
 
 
-export function Layout({ children }: { children: React.ReactNode }) {
+
+
+
+export function Root() {
+
+  
   return (
-    <html lang="en">
-      <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <Meta />
-        <Links />
-      </head>
-      <body>
-        <header className={s.header}>
-          <NavLink className={s.nav} to={"/"}>HomePage</NavLink>
-          <NavLink className={s.nav} to={"/add-bot"}>Add-Bot</NavLink>
-          <NavLink className={s.nav} to={"/context/posts"}>Posts</NavLink>
-          <NavLink className={s.nav} to={"/login"}>Войти в аккаунт</NavLink>
-        </header>
-
-        {children}
-        <ScrollRestoration />
-        <Scripts />
-      </body>
-    </html>
+    <Provider store={store}>
+      <Layout>
+        <App/>
+      </Layout>
+    </Provider>
   );
 }
-
-export default function App() {
-  const navigation = useNavigation()
-  const isNavgation = Boolean(navigation.location)
+function refresh () {
+  const { data } = useRefreshTokenQuery(undefined,{
+    pollingInterval: Infinity,
+    skip: false,
+    refetchOnMountOrArgChange: false
+  })
+  console.log(data)
+}
+export function App () {
+  const navigation = useNavigation();
+  const isNavgation = Boolean(navigation.location);
+  const { data } = useValidUserQuery(undefined,{
+      pollingInterval: 15* 60 * 1000,
+      skip:false,
+      refetchOnMountOrArgChange: false
+    })
+    console.log(data)
+    if (!data) {
+       refresh()
+    }
   return (
-  <Provider store={store}>
-    {isNavgation && <GlobalSpiner />}
-    <Outlet />
-  </Provider>
+    <>
+      <Navigation/>
+      {isNavgation && <GlobalSpiner />}
+      <Outlet />
+    </>
   )
 }
+ 
+export default Root;

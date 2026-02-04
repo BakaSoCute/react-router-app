@@ -1,125 +1,94 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 type User = {
-    id: number;
-    name: string;
-    email: string;
-    address: {
-        street: string;
-        suite: string;
-        city: string;
-        zipcode: string;
-        geo: {
-            lat: string;
-            lng: string;
-        };
-    };
-    phone: string;
-    website: string;
-    company: {
-        name: string;
-        catchPhrase: string;
-        bs: string;
-    };
-};
+    success: boolean,
+    user: {
+        id: string,
+        login: string,
+        display_name: string,
+        email: string,
+        description: string | undefined,
+        profile_image_url: string,
+        created_at: string,
+        broadcaster_type: string | undefined,
+        view_count: number
+    },
+    timestamp: string
+}
+type Valid = {
+    isValid: boolean
+}
+type Refresh = {
+    status: string
+}
 
-type Post = {
-    userId: number;
-    id: number;
-    title: string;
-    body: string;
-};
 
-type AddUserRequest = {
-    channelId: string;
-};
-
-type AddUserResponse = {
-    channelId: string
-    message: string
-    success: boolean
-};
-
-const TOKEN = import.meta.env.VITE_TOKEN_RAILWAY||import.meta.env.API_TOKEN_RAILWAY;
 
 export const api = createApi({
     reducerPath: "api",
     baseQuery: fetchBaseQuery({ 
-        baseUrl: 'https://jsonplaceholder.typicode.com'
+        baseUrl: import.meta.env.VITE_BACKEND_URL,
+        credentials: 'include'
     }),
-    tagTypes: ["User", "Post", "Todo"], 
+    tagTypes: ["User","Valid","Refresh"],
     endpoints: (builder) => ({
-        getUsers: builder.query<User[], void>({
-            query: () => '/users',
+        getUser: builder.query<User, void>({
+            query: () => '/api/auth/twitch/user',
             providesTags: (result) => 
-                result 
-                    ? [
-                        ...result.map(({ id }) => ({ type: 'User' as const, id })),
-                        { type: 'User', id: 'LIST' }
-                    ]
-                    : [{ type: 'User', id: 'LIST' }]
+                result ? [{ type: 'User', state: {id: result.user.id,
+                    login: result.user.login,
+                    display_name: result.user.display_name,
+                    email: result.user.email,
+                    profile_image_url: result.user.profile_image_url
+                 }}] : []
         }),
-        
-        getPosts: builder.query<Post[], number>({
-            query: (limit = 10) => `/posts?_limit=${limit}`,
-            // query: () => '/posts',
-            // transformResponse: (response: Post[], meta, arg) => {
-            //     return response.slice(0, arg);
-            // },
+        validUser: builder.query<Valid, void>({
+            query: () => "/api/auth/validate",
+            providesTags: (result) => 
+                result ? [{type: "Valid", isValid: result.isValid}] : []
+        }),
+        refreshToken: builder.query<Refresh,void>({
+            query: () => "/api/auth/refresh",
             providesTags: (result) =>
-                result
-                    ? [
-                        ...result.map(({ id }) => ({ type: 'Post' as const, id })),
-                        { type: 'Post', id: 'LIST' }
-                    ]
-                    : [{ type: 'Post', id: 'LIST' }]
-        }),
-        
-        createUser: builder.mutation<User, Partial<User>>({
-            query: (body) => ({
-                url: "/users",
-                method: "POST",
-                body,
-            }),
-            invalidatesTags: [{ type: 'User', id: 'LIST' }],
-        }),
+                result ? [{type: "Refresh", status: result.status}] : []
+        })
     })
 });
 
-export const apiRailway = createApi({
-    reducerPath: "apiRailway",
-    baseQuery: fetchBaseQuery({ 
-        baseUrl: "https://bot-twich-production.up.railway.app",
-        prepareHeaders: (headers) => {
-            if (TOKEN) {
-                headers.set('Authorization', `Bearer ${TOKEN}`);
-            }
-            headers.set('Content-Type', 'application/json');
-            return headers;
-        }
-    }),
-    tagTypes: ["Channel"],
-    endpoints: (builder) => ({
-        addUser: builder.mutation<AddUserResponse, AddUserRequest>({
-            query: (body) => ({
-                url: "/api/channels",
-                method: "POST",
-                body: {
-                    channelId: body.channelId
-                }
-            }),
-            invalidatesTags: [{ type: 'Channel', id: 'LIST' }]
-        }),
+// export const apiRailway = createApi({
+//     reducerPath: "apiRailway",
+//     baseQuery: fetchBaseQuery({ 
+//         baseUrl: "https://bot-twich-production.up.railway.app",
+//         prepareHeaders: (headers) => {
+//             if (TOKEN) {
+//                 headers.set('Authorization', `Bearer ${TOKEN}`);
+//             }
+//             headers.set('Content-Type', 'application/json');
+//             return headers;
+//         }
+//     }),
+//     tagTypes: ["Channel"],
+//     endpoints: (builder) => ({
+//         addUser: builder.mutation<AddUserResponse, AddUserRequest>({
+//             query: (body) => ({
+//                 url: "/api/channels",
+//                 method: "POST",
+//                 body: {
+//                     channelId: body.channelId
+//                 }
+//             }),
+//             invalidatesTags: [{ type: 'Channel', id: 'LIST' }]
+//         }),
         
-    })
-});
+//     })
+// });
 
 export const { 
-    useGetUsersQuery, 
-    useGetPostsQuery, 
-    useCreateUserMutation 
+    useGetUserQuery,
+    useValidUserQuery,
+    useRefreshTokenQuery 
 } = api;
 
-export const { 
-    useAddUserMutation 
-} = apiRailway;
+// export const { 
+//     useAddUserMutation 
+// } = apiRailway;

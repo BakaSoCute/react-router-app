@@ -8,7 +8,7 @@ import {
   selectCount,
   selectStatus,
 } from './counterSlice';
-import { useGetPostsQuery, useGetUsersQuery } from '../../api/api';
+import { useGetUserQuery } from '../../api/api';
 import s from "./Counter.module.css"
 
 export const Counter: React.FC = () => {
@@ -16,7 +16,7 @@ export const Counter: React.FC = () => {
   const count = useAppSelector(selectCount);
   const status = useAppSelector(selectStatus)
   const [amount, setAmount] = useState('2');
-  const { data: users = []} = useGetUsersQuery(undefined,{
+  const { data: user = null } = useGetUserQuery(undefined,{
     pollingInterval: Infinity,
     skip:false,
     refetchOnMountOrArgChange: false
@@ -29,9 +29,9 @@ export const Counter: React.FC = () => {
       <h2>Status: {status}</h2>
       <ul className={s.users}>
         <p>Users:</p>
-          {users.map((user) => (
-          <li key={user.id}>{user.name}--- Phone:{user.phone}</li>
-        ))}
+          {user && (
+            <li key={user.user.id}>{user.user.id}</li>
+          )}
       </ul>
       <div className={s.buttons}>
         <button onClick={() => dispatch(increment())}>+</button>

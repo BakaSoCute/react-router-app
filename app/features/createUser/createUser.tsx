@@ -1,14 +1,14 @@
 import React, { useState } from "react"
-import { useAddUserMutation, useCreateUserMutation, useGetUsersQuery } from "../../api/api"
+// import { useAddUserMutation, useCreateUserMutation, useGetUsersQuery } from "../../api/api"
 import s from "./createUser.module.css"
 
 
 export const CreateUser: React.FC = () => {
-    const [createUser, {isError,isLoading,isSuccess,error} ] = useCreateUserMutation()
-    const [ addUser] = useAddUserMutation()
+    // const [createUser, {isError,isLoading,isSuccess,error} ] = useCreateUserMutation()
+    // const [ addUser] = useAddUserMutation()
     const [formData, setFormData] = useState({name: "",email: "" })
     const [id, setId] = useState({channelId: ""})
-    const {data: users= []} = useGetUsersQuery()
+    // const {data: users= []} = useGetUsersQuery()
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -16,7 +16,7 @@ export const CreateUser: React.FC = () => {
             return console.error("заполните поля ")
         }
         try {
-            await createUser(formData).unwrap()
+            // await createUser(formData).unwrap()
             setFormData({name: "", email: ""})
         } catch (err) {
             console.error("error create user:", err)
@@ -25,7 +25,7 @@ export const CreateUser: React.FC = () => {
     const handleSubmitTo = async (e:React.FormEvent) => {
         e.preventDefault()
         try {
-            await addUser(id).unwrap()
+            // await addUser(id).unwrap()
             setId({channelId:""})
         } catch (err) {
             console.error("error add user:", err)
@@ -36,7 +36,7 @@ export const CreateUser: React.FC = () => {
     return(
         <div>
             <h3>Создать пользователя</h3>
-            <p>{users[0]?.name}</p>
+            {/* <p>{users[0]?.name}</p> */}
             <form onSubmit={handleSubmit}className={s.container}>
                 <input type="text"
                 className={s.input}
@@ -50,9 +50,9 @@ export const CreateUser: React.FC = () => {
                 value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
                  />
-                <button type="submit" disabled={isLoading} className={s.button}>
+                {/* <button type="submit" disabled={isLoading} className={s.button}>
                     {isLoading? "Создание..." : "Создать"}
-                </button>
+                </button> */}
             </form>
             <form className={s.container} onSubmit={handleSubmitTo}>
                 <input type="text"
@@ -64,8 +64,8 @@ export const CreateUser: React.FC = () => {
                  <button>Добавить</button>
             </form>
 
-            {isSuccess && <div>Пользователь создан</div>}
-            {isError && <div>Ошибка: {error.toString()}</div>}
+            {/* {isSuccess && <div>Пользователь создан</div>}
+            {isError && <div>Ошибка: {error.toString()}</div>} */}
         </div>
     )
 }

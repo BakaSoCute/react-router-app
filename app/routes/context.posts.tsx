@@ -1,5 +1,4 @@
 
-import { About } from "~/pages/context/about/About";
 import type { Route } from "./+types/context.posts";
 export function meta({}: Route.MetaArgs) {
   return [
@@ -11,7 +10,6 @@ export default function posts () {
     return (
         <div>
             <h1>about page</h1>
-            <About />
         </div>
         
     )
