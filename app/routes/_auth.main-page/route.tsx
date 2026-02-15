@@ -1,6 +1,6 @@
-import { useGetUserQuery } from "~/api/api"
-import type { Route} from "../_auth.main-page/+types/route"
+import type { Route } from "../_auth.main-page/+types/route"
 import s from "./main-page.module.css"
+import { useAuth } from "~/hooks/useAuth"
 
 export function meta({}: Route.MetaArgs) {
     return [
@@ -9,26 +9,21 @@ export function meta({}: Route.MetaArgs) {
     ]
 }
 
-
 const route = () => {
-    const { data: user = null } = useGetUserQuery(undefined,{
-        pollingInterval: Infinity,
-        skip:false,
-        refetchOnMountOrArgChange: false
-      })
-    console.log(user)
-    if (!user) {
-        return <div>Loading...</div>
+    const { user, isLoading } = useAuth()
+
+    if (isLoading || !user?.id) {
+        return <div>Загрузка...</div>
     }
     return (
         <div>
             <h1>Main Page</h1>
             <div className={s.profile}>
-                <img src={user.user.profile_image_url} alt={user.user.display_name} />
-                <p>Id:{user.user.id}</p>
-                <p>Login:{user.user.login}</p>
-                <p>Name:{user.user.display_name}</p>
-                <p>Email:{user.user.email}</p>
+                <img src={user.profile_image_url} alt={user.display_name} />
+                <p>Id:{user.id}</p>
+                <p>Login:{user.login}</p>
+                <p>Name:{user.display_name}</p>
+                <p>Email:{user.email}</p>
             </div>
         </div>
     )

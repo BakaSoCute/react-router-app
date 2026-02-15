@@ -1,5 +1,6 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
+
 type User = {
     success: boolean,
     user: {
@@ -7,10 +8,10 @@ type User = {
         login: string,
         display_name: string,
         email: string,
-        description: string | undefined,
+        description: string,
         profile_image_url: string,
         created_at: string,
-        broadcaster_type: string | undefined,
+        broadcaster_type: string,
         view_count: number
     },
     timestamp: string
@@ -21,6 +22,10 @@ type Valid = {
 type Refresh = {
     status: string
 }
+type LogoutResponse = {
+    success: boolean
+    message?: string
+}
 
 
 
@@ -30,7 +35,7 @@ export const api = createApi({
         baseUrl: import.meta.env.VITE_BACKEND_URL,
         credentials: 'include'
     }),
-    tagTypes: ["User","Valid","Refresh"],
+    tagTypes: ["User","Valid","Refresh","Auth"],
     endpoints: (builder) => ({
         getUser: builder.query<User, void>({
             query: () => '/api/auth/twitch/user',
@@ -40,7 +45,7 @@ export const api = createApi({
                     display_name: result.user.display_name,
                     email: result.user.email,
                     profile_image_url: result.user.profile_image_url
-                 }}] : []
+                 }}] : [],
         }),
         validUser: builder.query<Valid, void>({
             query: () => "/api/auth/validate",
@@ -51,6 +56,13 @@ export const api = createApi({
             query: () => "/api/auth/refresh",
             providesTags: (result) =>
                 result ? [{type: "Refresh", status: result.status}] : []
+        }),
+        logout: builder.mutation<LogoutResponse, void>({
+            query: () => ({
+                url: "/api/auth/logout",
+                method: "POST",
+            }),
+            invalidatesTags: ["User", "Valid", "Auth"]
         })
     })
 });
@@ -86,7 +98,8 @@ export const api = createApi({
 export const { 
     useGetUserQuery,
     useValidUserQuery,
-    useRefreshTokenQuery 
+    useRefreshTokenQuery,
+    useLogoutMutation
 } = api;
 
 // export const { 

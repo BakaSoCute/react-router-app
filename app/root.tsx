@@ -1,7 +1,4 @@
-import {
-  Outlet,
-  redirect
-} from "react-router";
+import { Outlet } from "react-router";
 
 
 import { Provider } from "react-redux";
@@ -10,7 +7,7 @@ import { useNavigation } from "react-router";
 import { GlobalSpiner } from "./features/globalSpiner";
 import { Layout } from "./Layout";
 import { Navigation } from "./Navigate";
-import { useRefreshTokenQuery, useValidUserQuery } from "./api/api";
+import { useAuth } from "./hooks/useAuth";
 
 
 
@@ -28,30 +25,18 @@ export function Root() {
     </Provider>
   );
 }
-function refresh () {
-  const { data } = useRefreshTokenQuery(undefined,{
-    pollingInterval: Infinity,
-    skip: false,
-    refetchOnMountOrArgChange: false
-  })
-  console.log(data)
-}
-export function App () {
+export function App() {
   const navigation = useNavigation();
-  const isNavgation = Boolean(navigation.location);
-  const { data } = useValidUserQuery(undefined,{
-      pollingInterval: 15* 60 * 1000,
-      skip:false,
-      refetchOnMountOrArgChange: false
-    })
-    console.log(data)
-    if (!data) {
-       refresh()
-    }
+  const isNavigation = Boolean(navigation.location);
+  
+  // Инициализация авторизации при загрузке приложения
+  // Данные автоматически синхронизируются с Redux через extraReducers
+  useAuth();
+
   return (
     <>
       <Navigation/>
-      {isNavgation && <GlobalSpiner />}
+      {isNavigation && <GlobalSpiner />}
       <Outlet />
     </>
   )
