@@ -5,3 +5,6 @@
 # React Router
 /.react-router/
 /build/
+.gitignore
+dev.app.aleksandromelucik.ru+3-key.pem
+dev.app.aleksandromelucik.ru+3.pem
