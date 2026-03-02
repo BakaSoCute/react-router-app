@@ -6,8 +6,7 @@ export const Login = () => {
     const handleSubmit = () => {
         // Авторизация происходит автоматически через extraReducers
         // после успешного ответа от бэкенда при редиректе обратно
-        //const origin = encodeURIComponent(window.location.origin);
-        const origin = "https://app.aleksandromelucik.ru"
+        const origin = encodeURIComponent(window.location.origin);
         window.location.href = `${BACKEND_URL}/api/auth/twitch?origin=${origin}`
     }
     return (

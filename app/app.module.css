@@ -9,11 +9,21 @@ body {
   font-family: sans-serif;
   min-width: 100vw;
   min-height: 100vh;
+  margin: 0;
+  margin-top: 40px;
+  position: relative;
 
 }
 .header{
   display: flex;
   justify-content: space-between;
+  background-color: #08a04c;
+  margin-bottom: 20px;
+  padding: 10px;
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
 }
 .nav{
   color: rgb(0, 0, 0);

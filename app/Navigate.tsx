@@ -10,6 +10,7 @@ export const Navigation = () => {
             <NavLink className={s.nav} to={"/"}>HomePage</NavLink>
             <NavLink className={s.nav} to={"/add-bot"}>Add-Bot</NavLink>
             <NavLink className={s.nav} to={"/context/posts"}>Posts</NavLink>
+            <NavLink className={s.nav} to={"/main-page"}>Профиль</NavLink>
             {isLoggedIn ? 
             <NavLink className={s.nav} to={"/logout"}>Выйти из аккаунта</NavLink>
             :
