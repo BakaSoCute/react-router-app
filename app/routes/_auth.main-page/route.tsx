@@ -17,7 +17,7 @@ const route = () => {
     }
     return (
         <div>
-            <h1>Main Page</h1>
+            <h1>Main Page</h1> 
             <div className={s.profile}>
                 <img src={user.profile_image_url} alt={user.display_name} />
                 <p>Id:{user.id}</p>
