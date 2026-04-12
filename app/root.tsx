@@ -1,5 +1,5 @@
 import { Outlet } from "react-router";
-
+import "./global.css";
 
 import { Provider } from "react-redux";
 import { store } from "./store/store";

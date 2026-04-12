@@ -27,6 +27,39 @@ type LogoutResponse = {
     message?: string
 }
 
+type AddBotResponse = {
+    success: boolean
+    message?: string
+    channelId?: string
+    login?: string
+    railway?: { ok?: boolean; skipped?: boolean; error?: string; data?: unknown }
+    moderator?: { ok?: boolean; error?: string }
+    rollback?: { ok: true } | { ok: false; error: string }
+}
+
+type RemoveBotResponse = {
+    success: boolean
+    message?: string
+    channelId?: string
+    login?: string
+    railway?: { ok?: boolean; skipped?: boolean; notRegistered?: boolean; error?: string; data?: unknown }
+    moderator?: { ok?: boolean; error?: string }
+}
+
+export type BotChannelStatus = {
+    channelId: string
+    subscribed: boolean
+    eventsubConnected: boolean
+    streamLive: boolean
+    botEnabled: boolean
+    timer: {
+        active: boolean
+        remainingMs?: number
+        totalMinutes?: number
+        endsAt?: number
+    }
+}
+
 
 
 export const api = createApi({
@@ -35,7 +68,7 @@ export const api = createApi({
         baseUrl: import.meta.env.VITE_BACKEND_URL,
         credentials: 'include'
     }),
-    tagTypes: ["User","Valid","Refresh","Auth"],
+    tagTypes: ["User","Valid","Refresh","Auth","BotStatus"],
     endpoints: (builder) => ({
         getUser: builder.query<User, void>({
             query: () => '/api/auth/twitch/user',
@@ -63,45 +96,41 @@ export const api = createApi({
                 method: "POST",
             }),
             invalidatesTags: ["User", "Valid", "Auth"]
-        })
+        }),
+        addBotToChannel: builder.mutation<AddBotResponse, { channelId?: string } | void>({
+            query: (body) => ({
+                url: "/api/auth/railway/add-bot",
+                method: "POST",
+                body: body ?? {},
+            }),
+            invalidatesTags: ["BotStatus"],
+        }),
+        removeBotFromChannel: builder.mutation<RemoveBotResponse, { channelId?: string } | void>({
+            query: (body) => ({
+                url: "/api/auth/railway/remove-bot",
+                method: "POST",
+                body: body ?? {},
+            }),
+            invalidatesTags: ["BotStatus"],
+        }),
+        getBotChannelStatus: builder.query<BotChannelStatus, string>({
+            query: (channelId) => ({
+                url: "/api/auth/railway/bot-status",
+                params: { channelId },
+            }),
+            providesTags: (_result, _err, channelId) => [
+                { type: "BotStatus", id: channelId },
+            ],
+        }),
     })
 });
-
-// export const apiRailway = createApi({
-//     reducerPath: "apiRailway",
-//     baseQuery: fetchBaseQuery({ 
-//         baseUrl: "https://bot-twich-production.up.railway.app",
-//         prepareHeaders: (headers) => {
-//             if (TOKEN) {
-//                 headers.set('Authorization', `Bearer ${TOKEN}`);
-//             }
-//             headers.set('Content-Type', 'application/json');
-//             return headers;
-//         }
-//     }),
-//     tagTypes: ["Channel"],
-//     endpoints: (builder) => ({
-//         addUser: builder.mutation<AddUserResponse, AddUserRequest>({
-//             query: (body) => ({
-//                 url: "/api/channels",
-//                 method: "POST",
-//                 body: {
-//                     channelId: body.channelId
-//                 }
-//             }),
-//             invalidatesTags: [{ type: 'Channel', id: 'LIST' }]
-//         }),
-        
-//     })
-// });
 
 export const { 
     useGetUserQuery,
     useValidUserQuery,
     useRefreshTokenQuery,
-    useLogoutMutation
+    useLogoutMutation,
+    useAddBotToChannelMutation,
+    useRemoveBotFromChannelMutation,
+    useGetBotChannelStatusQuery,
 } = api;
-
-// export const { 
-//     useAddUserMutation 
-// } = apiRailway;
