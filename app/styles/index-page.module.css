@@ -1,0 +1,90 @@
+.wrap {
+  max-width: 62rem;
+  margin: 0 auto;
+  padding: 2rem 1rem 2.75rem;
+}
+
+.hero {
+  margin-bottom: 1.25rem;
+  padding: 1.35rem 1.2rem;
+  border-radius: 0.9rem;
+  background:
+    radial-gradient(circle at 8% 12%, rgba(56, 189, 248, 0.22), transparent 55%),
+    rgba(6, 27, 39, 0.72);
+  border: 1px solid rgba(125, 211, 252, 0.22);
+}
+
+.badge {
+  display: inline-flex;
+  margin: 0 0 0.7rem;
+  padding: 0.28rem 0.62rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #e0f2fe;
+  letter-spacing: 0.02em;
+  background: rgba(14, 165, 233, 0.2);
+  border: 1px solid rgba(125, 211, 252, 0.35);
+}
+
+.title {
+  margin: 0 0 0.65rem;
+  font-size: clamp(1.5rem, 2.7vw, 2.05rem);
+  line-height: 1.15;
+  color: #f0f9ff;
+  letter-spacing: -0.02em;
+}
+
+.lead {
+  margin: 0;
+  color: rgba(186, 230, 253, 0.92);
+  line-height: 1.58;
+}
+
+.grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 860px) {
+  .grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.card {
+  padding: 1.15rem;
+  border-radius: 0.85rem;
+  background: rgba(8, 35, 48, 0.68);
+  border: 1px solid rgba(125, 211, 252, 0.18);
+}
+
+.cardTitle {
+  margin: 0 0 0.8rem;
+  color: #e0f2fe;
+  font-size: 1.03rem;
+}
+
+.list {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.5rem;
+  color: #e8f4f8;
+  line-height: 1.5;
+}
+
+.text {
+  margin: 0.9rem 0 0;
+  color: rgba(186, 230, 253, 0.9);
+  line-height: 1.55;
+}
+
+.code {
+  padding: 0.08rem 0.38rem;
+  border-radius: 0.36rem;
+  background: rgba(0, 0, 0, 0.32);
+  color: #7dd3fc;
+  font-size: 0.86em;
+}
