@@ -1,5 +1,4 @@
 import type { Route } from "./+types/_index";
-import { Counter } from "~/features/counter/Counter";
 export function meta({}: Route.MetaArgs) {
   return [
     { title: "Главная страница" },
@@ -8,5 +7,5 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function mainPage() {
-  return <Counter />;
+  return <div>MainPage</div>;
 }

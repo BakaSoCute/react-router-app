@@ -11,16 +11,16 @@ export const Navigation = () => {
   const isLoggedIn = useAppSelector(selectLogin);
   return (
     <header className={s.header}>
-      <span className={s.brand}>TsundereChan</span>
+      <span className={s.brand}>TsundereChanAI</span>
       <NavLink className={({ isActive }) => navClass(isActive)} to="/">
         Главная
       </NavLink>
       <NavLink className={({ isActive }) => navClass(isActive)} to="/add-bot">
         Бот на канале
       </NavLink>
-      <NavLink className={({ isActive }) => navClass(isActive)} to="/context/posts">
+      {/* <NavLink className={({ isActive }) => navClass(isActive)} to="/context/posts">
         Посты
-      </NavLink>
+      </NavLink> */}
       <NavLink className={({ isActive }) => navClass(isActive)} to="/main-page">
         Профиль
       </NavLink>
