@@ -15,13 +15,13 @@ export const Navigation = () => {
       <NavLink className={({ isActive }) => navClass(isActive)} to="/">
         Главная
       </NavLink>
-      <NavLink className={({ isActive }) => navClass(isActive)} to="/add-bot">
-        Бот на канале
+      <NavLink className={({ isActive }) => navClass(isActive)} to="/channels">
+        Каналы и бот
       </NavLink>
       {/* <NavLink className={({ isActive }) => navClass(isActive)} to="/context/posts">
         Посты
       </NavLink> */}
-      <NavLink className={({ isActive }) => navClass(isActive)} to="/main-page">
+      <NavLink className={({ isActive }) => navClass(isActive)} to="/profile">
         Профиль
       </NavLink>
       {isLoggedIn ? (

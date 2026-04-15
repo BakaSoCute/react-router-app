@@ -9,9 +9,11 @@
   padding: 1.35rem 1.2rem;
   border-radius: 0.9rem;
   background:
-    radial-gradient(circle at 8% 12%, rgba(56, 189, 248, 0.22), transparent 55%),
-    rgba(6, 27, 39, 0.72);
-  border: 1px solid rgba(125, 211, 252, 0.22);
+    radial-gradient(circle at 8% 12%, rgba(255, 119, 198, 0.35), transparent 55%),
+    radial-gradient(circle at 90% 22%, rgba(56, 189, 248, 0.3), transparent 48%),
+    rgba(28, 16, 70, 0.76);
+  border: 1px solid rgba(167, 139, 250, 0.3);
+  box-shadow: 0 18px 40px rgba(30, 9, 89, 0.35);
 }
 
 .badge {
@@ -21,23 +23,23 @@
   border-radius: 999px;
   font-size: 0.78rem;
   font-weight: 700;
-  color: #e0f2fe;
+  color: #fdf4ff;
   letter-spacing: 0.02em;
-  background: rgba(14, 165, 233, 0.2);
-  border: 1px solid rgba(125, 211, 252, 0.35);
+  background: linear-gradient(135deg, rgba(217, 70, 239, 0.35), rgba(14, 165, 233, 0.35));
+  border: 1px solid rgba(244, 114, 182, 0.45);
 }
 
 .title {
   margin: 0 0 0.65rem;
   font-size: clamp(1.5rem, 2.7vw, 2.05rem);
   line-height: 1.15;
-  color: #f0f9ff;
+  color: #ffffff;
   letter-spacing: -0.02em;
 }
 
 .lead {
   margin: 0;
-  color: rgba(186, 230, 253, 0.92);
+  color: rgba(233, 235, 255, 0.94);
   line-height: 1.58;
 }
 
@@ -56,13 +58,14 @@
 .card {
   padding: 1.15rem;
   border-radius: 0.85rem;
-  background: rgba(8, 35, 48, 0.68);
-  border: 1px solid rgba(125, 211, 252, 0.18);
+  background: rgba(24, 12, 66, 0.72);
+  border: 1px solid rgba(129, 140, 248, 0.32);
+  box-shadow: 0 14px 28px rgba(19, 8, 55, 0.3);
 }
 
 .cardTitle {
   margin: 0 0 0.8rem;
-  color: #e0f2fe;
+  color: #eff6ff;
   font-size: 1.03rem;
 }
 
@@ -71,20 +74,52 @@
   padding-left: 1.1rem;
   display: grid;
   gap: 0.5rem;
-  color: #e8f4f8;
+  color: #eef2ff;
   line-height: 1.5;
 }
 
 .text {
   margin: 0.9rem 0 0;
-  color: rgba(186, 230, 253, 0.9);
+  color: rgba(224, 231, 255, 0.88);
   line-height: 1.55;
 }
 
 .code {
   padding: 0.08rem 0.38rem;
   border-radius: 0.36rem;
-  background: rgba(0, 0, 0, 0.32);
-  color: #7dd3fc;
+  background: rgba(2, 6, 23, 0.42);
+  color: #f9a8d4;
   font-size: 0.86em;
+}
+
+.actions {
+  margin-top: 1.1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.ctaPrimary,
+.ctaGhost {
+  border-radius: 0.6rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 0.62rem 0.95rem;
+}
+
+.ctaPrimary {
+  background: linear-gradient(135deg, #ec4899, #8b5cf6 55%, #0ea5e9);
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(236, 72, 153, 0.35);
+}
+
+.ctaGhost {
+  border: 1px solid rgba(196, 181, 253, 0.45);
+  color: #e9d5ff;
+  background: rgba(30, 27, 75, 0.44);
+}
+
+.ctaPrimary:hover,
+.ctaGhost:hover {
+  filter: brightness(1.08);
 }

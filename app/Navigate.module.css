@@ -4,8 +4,8 @@
   align-items: center;
   gap: 0.5rem 0.75rem;
   padding: 0.65rem 1rem;
-  background: rgba(6, 28, 38, 0.92);
-  border-bottom: 1px solid rgba(100, 200, 220, 0.2);
+  background: linear-gradient(120deg, rgba(49, 22, 104, 0.9), rgba(18, 54, 132, 0.9));
+  border-bottom: 1px solid rgba(196, 181, 253, 0.35);
   position: fixed;
   top: 0;
   left: 0;
@@ -22,7 +22,7 @@
   text-decoration: none;
   font-size: 0.9rem;
   font-weight: 600;
-  color: #b8e8f0;
+  color: #e9d5ff;
   border: 1px solid transparent;
   transition:
     background 0.2s ease,
@@ -31,20 +31,21 @@
 }
 
 .nav:hover {
-  background: rgba(80, 180, 200, 0.15);
+  background: rgba(168, 85, 247, 0.22);
   color: #fff;
 }
 
 .navActive {
-  background: rgba(56, 189, 248, 0.2);
-  color: #7dd3fc;
-  border-color: rgba(125, 211, 252, 0.35);
+  background: linear-gradient(135deg, rgba(236, 72, 153, 0.28), rgba(59, 130, 246, 0.3));
+  color: #f5d0fe;
+  border-color: rgba(244, 114, 182, 0.45);
 }
 
 .brand {
   font-weight: 700;
   font-size: 1rem;
-  color: #fff;
+  color: #fdf4ff;
   margin-right: auto;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.03em;
+  text-shadow: 0 0 22px rgba(244, 114, 182, 0.35);
 }

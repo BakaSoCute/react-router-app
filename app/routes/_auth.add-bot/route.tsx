@@ -1,13 +1,13 @@
-import  AddUser  from "./addUser"
-import type { Route } from "./+types/route"
+import { Navigate } from "react-router";
+import type { Route } from "./+types/route";
+
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "Добавить бота" },
-    { name: "description", content: "Страница добавления бота в чат" },
+    { title: "Перенаправление" },
+    { name: "description", content: "Переход на новую страницу каналов" },
   ];
 }
-export default function () {
-    return (
-        <AddUser />
-    )
-} 
+
+export default function LegacyAddBotRoute() {
+  return <Navigate to="/channels" replace />;
+}

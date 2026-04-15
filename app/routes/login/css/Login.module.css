@@ -1,9 +1,46 @@
-.main{
-    display: flex;
-    width: 600px;
-    height: 500px;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    margin: 0 auto;
+.main {
+  max-width: 34rem;
+  margin: 0 auto;
+  padding: 2rem 1rem 2.5rem;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.9rem;
+  border-radius: 0.9rem;
+  padding: 1.35rem;
+  border: 1px solid rgba(196, 181, 253, 0.45);
+  background:
+    radial-gradient(circle at 90% 15%, rgba(56, 189, 248, 0.25), transparent 40%),
+    rgba(31, 17, 75, 0.74);
+  box-shadow: 0 20px 36px rgba(26, 14, 70, 0.34);
+}
+
+.title {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #fdf4ff;
+}
+
+.text {
+  margin: 0;
+  color: rgba(224, 231, 255, 0.9);
+  line-height: 1.55;
+}
+
+.button {
+  border: none;
+  border-radius: 0.6rem;
+  padding: 0.68rem 1rem;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  background: linear-gradient(135deg, #ec4899, #8b5cf6 55%, #06b6d4);
+  box-shadow: 0 10px 24px rgba(236, 72, 153, 0.35);
+}
+
+.button:hover {
+  filter: brightness(1.08);
 }

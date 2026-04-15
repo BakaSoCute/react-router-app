@@ -60,6 +60,22 @@ export type BotChannelStatus = {
     }
 }
 
+export type ManagedChannel = {
+    id: string
+    login: string
+    name: string
+    source: "self" | "moderated"
+}
+
+type ManagedChannelsResponse = {
+    success: boolean
+    user: {
+        id: string
+        login: string
+    }
+    channels: ManagedChannel[]
+}
+
 
 
 export const api = createApi({
@@ -122,6 +138,9 @@ export const api = createApi({
                 { type: "BotStatus", id: channelId },
             ],
         }),
+        getManagedChannels: builder.query<ManagedChannelsResponse, void>({
+            query: () => "/api/auth/railway/managed-channels",
+        }),
     })
 });
 
@@ -133,4 +152,5 @@ export const {
     useAddBotToChannelMutation,
     useRemoveBotFromChannelMutation,
     useGetBotChannelStatusQuery,
+    useGetManagedChannelsQuery,
 } = api;

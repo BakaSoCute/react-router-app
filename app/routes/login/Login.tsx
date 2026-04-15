@@ -11,8 +11,15 @@ export const Login = () => {
     }
     return (
         <main className={s.main}>
-            <h1>Войти в аккаунт</h1>
-            <button onClick={handleSubmit}>Войти через Twitch</button>
+            <section className={s.card}>
+              <h1 className={s.title}>Вход в TsundereChanAI</h1>
+              <p className={s.text}>
+                Авторизуйтесь через Twitch, чтобы подключать бота к каналу, управлять статусом и модерированием.
+              </p>
+              <button className={s.button} onClick={handleSubmit}>
+                Войти через Twitch
+              </button>
+            </section>
         </main>
     )
 }

@@ -1,4 +1,6 @@
 import type { Route } from "./+types/_index";
+import { Link } from "react-router";
+import { useAuth } from "~/hooks/useAuth";
 import s from "../styles/index-page.module.css";
 
 export function meta({}: Route.MetaArgs) {
@@ -9,6 +11,8 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function mainPage() {
+  const { isAuthenticated } = useAuth();
+
   return (
     <main className={s.wrap}>
       <section className={s.hero}>
@@ -28,8 +32,24 @@ export default function mainPage() {
             <li>Поддерживает модерационные инструменты для чата.</li>
           </ul>
           <p className={s.text}>
-            Для начала работы зайдите через Twitch и подключите бота на странице <strong>«Бот на канале»</strong>.
+            Для начала работы зайдите через Twitch и подключите бота на странице <strong>«Каналы и бот»</strong>.
           </p>
+          <div className={s.actions}>
+            {isAuthenticated ? (
+              <>
+                <Link className={s.ctaPrimary} to="/channels">
+                  Открыть каналы и бота
+                </Link>
+                <Link className={s.ctaGhost} to="/profile">
+                  Перейти в профиль
+                </Link>
+              </>
+            ) : (
+              <Link className={s.ctaPrimary} to="/login">
+                Войти через Twitch
+              </Link>
+            )}
+          </div>
         </article>
 
         <article className={s.card}>

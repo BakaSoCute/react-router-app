@@ -1,4 +1,10 @@
-import { useAddBotToChannelMutation, useGetUserQuery, useRemoveBotFromChannelMutation } from "~/api/api";
+import { useEffect, useMemo, useState } from "react";
+import {
+  useAddBotToChannelMutation,
+  useGetManagedChannelsQuery,
+  useGetUserQuery,
+  useRemoveBotFromChannelMutation,
+} from "~/api/api";
 import { BotStatusPanel } from "./BotStatusPanel";
 import s from "./addUser.module.css";
 
@@ -16,24 +22,46 @@ function pickErrorMessage(error: unknown): string {
 
 export default function AddUser() {
   const { data: userPayload, isLoading: userLoading } = useGetUserQuery();
+  const { data: managedPayload, isLoading: channelsLoading } = useGetManagedChannelsQuery();
   const user = userPayload?.user;
+  const managedChannels = managedPayload?.channels ?? [];
 
   const [addBot, addState] = useAddBotToChannelMutation();
   const [removeBot, removeState] = useRemoveBotFromChannelMutation();
+  const [selectedChannelId, setSelectedChannelId] = useState("");
+
+  const selectedChannel = useMemo(
+    () => managedChannels.find((ch) => ch.id === selectedChannelId),
+    [managedChannels, selectedChannelId]
+  );
+
+  useEffect(() => {
+    if (!user?.id) return;
+    if (managedChannels.length > 0) {
+      setSelectedChannelId((prev) => {
+        if (prev && managedChannels.some((ch) => ch.id === prev)) return prev;
+        return managedChannels[0].id;
+      });
+      return;
+    }
+    setSelectedChannelId((prev) => (prev ? prev : user.id));
+  }, [managedChannels, user?.id]);
 
   const handleAdd = async () => {
+    if (!selectedChannelId) return;
     removeState.reset();
     try {
-      await addBot({}).unwrap();
+      await addBot({ channelId: selectedChannelId }).unwrap();
     } catch {
       /* RTK Query */
     }
   };
 
   const handleRemove = async () => {
+    if (!selectedChannelId) return;
     addState.reset();
     try {
-      await removeBot({}).unwrap();
+      await removeBot({ channelId: selectedChannelId }).unwrap();
     } catch {
       /* RTK Query */
     }
@@ -56,20 +84,60 @@ export default function AddUser() {
     <div className={s.wrap}>
       <h1 className={s.title}>Бот на вашем канале</h1>
       <p className={s.lead}>
-        Вы вошли как <strong>{user.display_name}</strong> (@{user.login}). Канал:{" "}
-        <code className={s.code}>{user.id}</code>. Для кнопок ниже нужен scope{" "}
-        <code className={s.code}>channel:manage:moderators</code>.
+        Вы вошли как <strong>{user.display_name}</strong> (@{user.login}). Для кнопок ниже нужны scopes{" "}
+        <code className={s.code}>channel:manage:moderators</code> и{" "}
+        <code className={s.code}>user:read:moderated_channels</code>.
       </p>
 
-      <BotStatusPanel channelId={user.id} />
+      <div className={s.card}>
+        <h2 className={s.cardTitle}>Выбор канала</h2>
+        <label className={s.fieldLabel} htmlFor="channelId">
+          Управляемый канал
+        </label>
+        <select
+          id="channelId"
+          className={s.select}
+          value={selectedChannelId}
+          onChange={(e) => setSelectedChannelId(e.target.value)}
+          disabled={channelsLoading || managedChannels.length === 0}
+        >
+          {managedChannels.length === 0 ? (
+            <option value={user.id}>
+              {channelsLoading ? "Загрузка каналов..." : `${user.display_name} (ваш канал)`}
+            </option>
+          ) : (
+            managedChannels.map((ch) => (
+              <option key={ch.id} value={ch.id}>
+                {ch.name || ch.login || ch.id}
+                {ch.source === "self" ? " (ваш канал)" : " (модератор)"}
+              </option>
+            ))
+          )}
+        </select>
+        <p className={s.hint}>
+          Можно управлять ботом на вашем канале и на каналах, где у вас есть права модератора.
+        </p>
+      </div>
+
+      <BotStatusPanel channelId={selectedChannelId || user.id} />
 
       <div className={s.card}>
         <h2 className={s.cardTitle}>Подключение</h2>
+        {selectedChannel ? (
+          <p className={s.hint}>
+            Текущий канал: <strong>{selectedChannel.name || selectedChannel.login || selectedChannel.id}</strong>{" "}
+            (<code className={s.code}>{selectedChannel.id}</code>)
+          </p>
+        ) : (
+          <p className={s.hint}>
+            Текущий канал: <code className={s.code}>{selectedChannelId || user.id}</code>
+          </p>
+        )}
         <div className={s.actions}>
           <button
             type="button"
             className={s.buttonPrimary}
-            disabled={addState.isLoading || removeState.isLoading}
+            disabled={addState.isLoading || removeState.isLoading || !selectedChannelId}
             onClick={() => void handleAdd()}
           >
             {addState.isLoading ? "Подключение…" : "Подключить бота и выдать модератора"}
@@ -77,7 +145,7 @@ export default function AddUser() {
           <button
             type="button"
             className={s.buttonDanger}
-            disabled={addState.isLoading || removeState.isLoading}
+            disabled={addState.isLoading || removeState.isLoading || !selectedChannelId}
             onClick={() => void handleRemove()}
           >
             {removeState.isLoading ? "Отключение…" : "Отключить бота и снять модератора"}
