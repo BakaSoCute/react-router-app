@@ -37,7 +37,7 @@ export function BotStatusPanel({ channelId }: Props) {
     channelId,
     {
       skip: !channelId,
-      pollingInterval: 10_000,
+      pollingInterval: 30_000,
     }
   );
 
@@ -154,7 +154,7 @@ export function BotStatusPanel({ channelId }: Props) {
       </div>
 
       <p className={s.polling}>
-        {isFetching ? "Обновление…" : "Автообновление каждые 10 с"}
+        {isFetching ? "Обновление…" : "Автообновление каждые 30 с"}
         {botAnswering ? " · бот может отвечать в чате" : ""}
       </p>
     </section>

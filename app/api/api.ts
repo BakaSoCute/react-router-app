@@ -65,6 +65,8 @@ export type ManagedChannel = {
     login: string
     name: string
     source: "self" | "moderated"
+    /** Для чужих каналов: обычный модератор или ведущий (если бэкенд смог определить по ответу Twitch). */
+    moderatorRole?: "moderator" | "lead_moderator"
 }
 
 type ManagedChannelsResponse = {
