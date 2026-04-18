@@ -78,6 +78,19 @@ type ManagedChannelsResponse = {
     channels: ManagedChannel[]
 }
 
+export type ChatModuleItem = {
+    id: string
+    title: string
+    description: string
+    enabled: boolean
+}
+
+export type ChatModulesResponse = {
+    success: boolean
+    channelId: string
+    modules: ChatModuleItem[]
+}
+
 
 
 export const api = createApi({
@@ -86,7 +99,7 @@ export const api = createApi({
         baseUrl: import.meta.env.VITE_BACKEND_URL,
         credentials: 'include'
     }),
-    tagTypes: ["User","Valid","Refresh","Auth","BotStatus"],
+    tagTypes: ["User","Valid","Refresh","Auth","BotStatus","ChatModules"],
     endpoints: (builder) => ({
         getUser: builder.query<User, void>({
             query: () => '/api/auth/twitch/user',
@@ -121,7 +134,7 @@ export const api = createApi({
                 method: "POST",
                 body: body ?? {},
             }),
-            invalidatesTags: ["BotStatus"],
+            invalidatesTags: ["BotStatus", "ChatModules"],
         }),
         removeBotFromChannel: builder.mutation<RemoveBotResponse, { channelId?: string } | void>({
             query: (body) => ({
@@ -129,7 +142,7 @@ export const api = createApi({
                 method: "POST",
                 body: body ?? {},
             }),
-            invalidatesTags: ["BotStatus"],
+            invalidatesTags: ["BotStatus", "ChatModules"],
         }),
         getBotChannelStatus: builder.query<BotChannelStatus, string>({
             query: (channelId) => ({
@@ -143,6 +156,25 @@ export const api = createApi({
         getManagedChannels: builder.query<ManagedChannelsResponse, void>({
             query: () => "/api/auth/railway/managed-channels",
         }),
+        getChatModules: builder.query<ChatModulesResponse, string>({
+            query: (channelId) => ({
+                url: "/api/auth/railway/chat-modules",
+                params: { channelId },
+            }),
+            providesTags: (result) =>
+                result?.channelId ? [{ type: "ChatModules", id: result.channelId }] : [],
+        }),
+        patchChatModule: builder.mutation<
+            ChatModulesResponse,
+            { channelId: string; moduleId: string; enabled: boolean }
+        >({
+            query: (body) => ({
+                url: "/api/auth/railway/chat-modules",
+                method: "PATCH",
+                body,
+            }),
+            invalidatesTags: (_result, _err, arg) => [{ type: "ChatModules", id: arg.channelId }],
+        }),
     })
 });
 
@@ -155,4 +187,6 @@ export const {
     useRemoveBotFromChannelMutation,
     useGetBotChannelStatusQuery,
     useGetManagedChannelsQuery,
+    useGetChatModulesQuery,
+    usePatchChatModuleMutation,
 } = api;

@@ -7,6 +7,7 @@ import {
   useRemoveBotFromChannelMutation,
 } from "~/api/api";
 import { BotStatusPanel } from "./BotStatusPanel";
+import { ChatModulesPanel } from "./ChatModulesPanel";
 import s from "./addUser.module.css";
 
 function pickErrorMessage(error: unknown): string {
@@ -140,6 +141,11 @@ export default function AddUser() {
       </div>
 
       <BotStatusPanel channelId={selectedChannelId || user.id} />
+
+      <ChatModulesPanel
+        channelId={selectedChannelId || user.id}
+        subscribed={Boolean(botStatus?.subscribed)}
+      />
 
       <div className={s.card}>
         <h2 className={s.cardTitle}>Подключение</h2>
