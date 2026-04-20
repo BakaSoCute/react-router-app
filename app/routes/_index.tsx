@@ -16,10 +16,10 @@ export default function mainPage() {
   return (
     <main className={s.wrap}>
       <section className={s.hero}>
-        <p className={s.badge}>TsundereChanAI</p>
+        <p className={s.badge}>TsundereChanAI-beta</p>
         <h1 className={s.title}>Добро пожаловать в панель управления</h1>
         <p className={s.lead}>
-          Подключайте бота к каналу, управляйте его состоянием и используйте AI-команды для интерактива в чате Twitch.
+          Подключайте бота к каналу, управляйте его состоянием и используйте AI-команды для интерактива в чате Twitch. Сайт находится в разработке, но вы уже можете подключать бота.
         </p>
       </section>
 
@@ -78,6 +78,14 @@ export default function mainPage() {
           <p className={s.text}>
             Обращение <code className={s.code}>@TsundereChanAI</code> работает с памятью. Также можно отвечать прямо на сообщение бота.
           </p>
+        </article>
+        <article className={s.card}>
+          <h3>Контакты</h3>
+          <p>Разработчик: BakaSoCute</p>
+          <p className={s.text}>
+            Если у вас есть вопросы или предложения пишите в телеграм.
+          </p>
+          <p className={s.text}>Telegram: <a href="https://t.me/bakasocute">@BakaSoCute</a></p>
         </article>
       </section>
     </main>
