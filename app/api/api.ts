@@ -91,7 +91,15 @@ export type ChatModulesResponse = {
     modules: ChatModuleItem[]
 }
 
+export type ChannelAiPromptResponse = {
+    success: boolean
+    channelId: string
+    /** Пустая строка — дополнительный промт не задан */
+    prompt: string
+}
 
+/** Согласовано с бот-сервером (`CHANNEL_AI_PROMPT_MAX_CHARS`) */
+export const CHANNEL_AI_PROMPT_MAX_CHARS = 4000
 
 export const api = createApi({
     reducerPath: "api",
@@ -99,7 +107,7 @@ export const api = createApi({
         baseUrl: import.meta.env.VITE_BACKEND_URL,
         credentials: 'include'
     }),
-    tagTypes: ["User","Valid","Refresh","Auth","BotStatus","ChatModules"],
+    tagTypes: ["User","Valid","Refresh","Auth","BotStatus","ChatModules","ChannelAiPrompt"],
     endpoints: (builder) => ({
         getUser: builder.query<User, void>({
             query: () => '/api/auth/twitch/user',
@@ -134,7 +142,7 @@ export const api = createApi({
                 method: "POST",
                 body: body ?? {},
             }),
-            invalidatesTags: ["BotStatus", "ChatModules"],
+            invalidatesTags: ["BotStatus", "ChatModules", "ChannelAiPrompt"],
         }),
         removeBotFromChannel: builder.mutation<RemoveBotResponse, { channelId?: string } | void>({
             query: (body) => ({
@@ -142,7 +150,7 @@ export const api = createApi({
                 method: "POST",
                 body: body ?? {},
             }),
-            invalidatesTags: ["BotStatus", "ChatModules"],
+            invalidatesTags: ["BotStatus", "ChatModules", "ChannelAiPrompt"],
         }),
         getBotChannelStatus: builder.query<BotChannelStatus, string>({
             query: (channelId) => ({
@@ -175,6 +183,25 @@ export const api = createApi({
             }),
             invalidatesTags: (_result, _err, arg) => [{ type: "ChatModules", id: arg.channelId }],
         }),
+        getChannelAiPrompt: builder.query<ChannelAiPromptResponse, string>({
+            query: (channelId) => ({
+                url: "/api/auth/railway/channel-ai-prompt",
+                params: { channelId },
+            }),
+            providesTags: (result) =>
+                result?.channelId ? [{ type: "ChannelAiPrompt", id: result.channelId }] : [],
+        }),
+        patchChannelAiPrompt: builder.mutation<
+            ChannelAiPromptResponse,
+            { channelId: string; prompt: string }
+        >({
+            query: (body) => ({
+                url: "/api/auth/railway/channel-ai-prompt",
+                method: "PATCH",
+                body,
+            }),
+            invalidatesTags: (_result, _err, arg) => [{ type: "ChannelAiPrompt", id: arg.channelId }],
+        }),
     })
 });
 
@@ -189,4 +216,6 @@ export const {
     useGetManagedChannelsQuery,
     useGetChatModulesQuery,
     usePatchChatModuleMutation,
+    useGetChannelAiPromptQuery,
+    usePatchChannelAiPromptMutation,
 } = api;

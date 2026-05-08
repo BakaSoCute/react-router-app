@@ -7,6 +7,7 @@ import {
   useRemoveBotFromChannelMutation,
 } from "~/api/api";
 import { BotStatusPanel } from "./BotStatusPanel";
+import { ChannelAiPromptPanel } from "./ChannelAiPromptPanel";
 import { ChatModulesPanel } from "./ChatModulesPanel";
 import s from "./addUser.module.css";
 
@@ -143,6 +144,11 @@ export default function AddUser() {
       <BotStatusPanel channelId={selectedChannelId || user.id} />
 
       <ChatModulesPanel
+        channelId={selectedChannelId || user.id}
+        subscribed={Boolean(botStatus?.subscribed)}
+      />
+
+      <ChannelAiPromptPanel
         channelId={selectedChannelId || user.id}
         subscribed={Boolean(botStatus?.subscribed)}
       />
