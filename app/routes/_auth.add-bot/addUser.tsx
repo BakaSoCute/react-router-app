@@ -101,7 +101,7 @@ export default function AddUser() {
     <div className={s.wrap}>
       <h1 className={s.title}>Бот на вашем канале</h1>
       <p className={s.lead}>
-        Вы вошли как <strong>{user.display_name}</strong> (@{user.login}). На данной странице вы можете управлять ботом на вашем канале и каналах, где вы модератор.
+        Вы вошли как <strong>{user.display_name}</strong> (@{user.login}). На данной странице вы можете управлять ботом на вашем канале и на каналах, где вы модератор.
       </p>
 
       <div className={s.card}>
