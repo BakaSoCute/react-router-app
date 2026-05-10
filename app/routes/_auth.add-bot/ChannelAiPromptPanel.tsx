@@ -55,7 +55,7 @@ export function ChannelAiPromptPanel({ channelId, subscribed }: Props) {
         <h2 className={s.title}>Дополнительный промт для бота</h2>
         <p className={s.muted}>
           После подключения бота к каналу здесь можно задать дополнительные правила поведения для этого канала (они
-          добавляются к базовому промту бота).
+          добавляются к базовому промту бота). Влияет только на ответы через @TsundereChanAI
         </p>
       </section>
     );

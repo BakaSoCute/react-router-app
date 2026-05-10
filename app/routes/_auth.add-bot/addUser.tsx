@@ -101,9 +101,7 @@ export default function AddUser() {
     <div className={s.wrap}>
       <h1 className={s.title}>Бот на вашем канале</h1>
       <p className={s.lead}>
-        Вы вошли как <strong>{user.display_name}</strong> (@{user.login}). Для списка каналов и статуса нужен scope{" "}
-        <code className={s.code}>user:read:moderated_channels</code>; чтобы подключать или отключать бота — ещё{" "}
-        <code className={s.code}>channel:manage:moderators</code> и права владельца канала или ведущего модератора.
+        Вы вошли как <strong>{user.display_name}</strong> (@{user.login}). На данной странице вы можете управлять ботом на вашем канале и каналах, где вы модератор.
       </p>
 
       <div className={s.card}>
