@@ -101,13 +101,40 @@ export type ChannelAiPromptResponse = {
 /** Согласовано с бот-сервером (`CHANNEL_AI_PROMPT_MAX_CHARS`) */
 export const CHANNEL_AI_PROMPT_MAX_CHARS = 4000
 
+export type CustomCommandUserLevel = "everyone" | "vip" | "mod" | "broadcaster"
+
+export type CustomCommandItem = {
+    id: number
+    name: string
+    response: string
+    enabled: boolean
+    cooldownSeconds: number
+    userLevel: CustomCommandUserLevel
+    useCount: number
+}
+
+export type CustomCommandsResponse = {
+    success: boolean
+    channelId: string
+    commands: CustomCommandItem[]
+}
+
+export type CustomCommandSingleResponse = {
+    success: boolean
+    channelId: string
+    command: CustomCommandItem
+}
+
+export const CUSTOM_COMMAND_RESPONSE_MAX = 450
+export const CUSTOM_COMMANDS_MAX_PER_CHANNEL = 50
+
 export const api = createApi({
     reducerPath: "api",
     baseQuery: fetchBaseQuery({ 
         baseUrl: import.meta.env.VITE_BACKEND_URL,
         credentials: 'include'
     }),
-    tagTypes: ["User","Valid","Refresh","Auth","BotStatus","ChatModules","ChannelAiPrompt"],
+    tagTypes: ["User","Valid","Refresh","Auth","BotStatus","ChatModules","ChannelAiPrompt","CustomCommands"],
     endpoints: (builder) => ({
         getUser: builder.query<User, void>({
             query: () => '/api/auth/twitch/user',
@@ -142,7 +169,7 @@ export const api = createApi({
                 method: "POST",
                 body: body ?? {},
             }),
-            invalidatesTags: ["BotStatus", "ChatModules", "ChannelAiPrompt"],
+            invalidatesTags: ["BotStatus", "ChatModules", "ChannelAiPrompt", "CustomCommands"],
         }),
         removeBotFromChannel: builder.mutation<RemoveBotResponse, { channelId?: string } | void>({
             query: (body) => ({
@@ -150,7 +177,7 @@ export const api = createApi({
                 method: "POST",
                 body: body ?? {},
             }),
-            invalidatesTags: ["BotStatus", "ChatModules", "ChannelAiPrompt"],
+            invalidatesTags: ["BotStatus", "ChatModules", "ChannelAiPrompt", "CustomCommands"],
         }),
         getBotChannelStatus: builder.query<BotChannelStatus, string>({
             query: (channelId) => ({
@@ -202,6 +229,62 @@ export const api = createApi({
             }),
             invalidatesTags: (_result, _err, arg) => [{ type: "ChannelAiPrompt", id: arg.channelId }],
         }),
+        getCustomCommands: builder.query<CustomCommandsResponse, string>({
+            query: (channelId) => ({
+                url: "/api/auth/railway/custom-commands",
+                params: { channelId },
+            }),
+            providesTags: (result) =>
+                result?.channelId ? [{ type: "CustomCommands", id: result.channelId }] : [],
+        }),
+        createCustomCommand: builder.mutation<
+            CustomCommandSingleResponse,
+            {
+                channelId: string
+                name: string
+                response: string
+                enabled?: boolean
+                cooldownSeconds?: number
+                userLevel?: CustomCommandUserLevel
+            }
+        >({
+            query: (body) => ({
+                url: "/api/auth/railway/custom-commands",
+                method: "POST",
+                body,
+            }),
+            invalidatesTags: (_result, _err, arg) => [{ type: "CustomCommands", id: arg.channelId }],
+        }),
+        patchCustomCommand: builder.mutation<
+            CustomCommandSingleResponse,
+            {
+                channelId: string
+                commandId: number
+                name?: string
+                response?: string
+                enabled?: boolean
+                cooldownSeconds?: number
+                userLevel?: CustomCommandUserLevel
+            }
+        >({
+            query: (body) => ({
+                url: "/api/auth/railway/custom-commands",
+                method: "PATCH",
+                body,
+            }),
+            invalidatesTags: (_result, _err, arg) => [{ type: "CustomCommands", id: arg.channelId }],
+        }),
+        deleteCustomCommand: builder.mutation<
+            { success: boolean; channelId: string; commandId: number },
+            { channelId: string; commandId: number }
+        >({
+            query: (body) => ({
+                url: "/api/auth/railway/custom-commands",
+                method: "DELETE",
+                body,
+            }),
+            invalidatesTags: (_result, _err, arg) => [{ type: "CustomCommands", id: arg.channelId }],
+        }),
     })
 });
 
@@ -218,4 +301,8 @@ export const {
     usePatchChatModuleMutation,
     useGetChannelAiPromptQuery,
     usePatchChannelAiPromptMutation,
+    useGetCustomCommandsQuery,
+    useCreateCustomCommandMutation,
+    usePatchCustomCommandMutation,
+    useDeleteCustomCommandMutation,
 } = api;
