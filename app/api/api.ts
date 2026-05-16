@@ -197,10 +197,11 @@ export const api = createApi({
             providesTags: (result) => 
                 result ? [{type: "Valid", isValid: result.isValid}] : []
         }),
-        refreshToken: builder.query<Refresh,void>({
-            query: () => "/api/auth/refresh",
-            providesTags: (result) =>
-                result ? [{type: "Refresh", status: result.status}] : []
+        refreshToken: builder.mutation<Refresh, void>({
+            query: () => ({
+                url: "/api/auth/refresh",
+                method: "POST",
+            }),
         }),
         logout: builder.mutation<LogoutResponse, void>({
             query: () => ({
@@ -387,7 +388,7 @@ export const api = createApi({
 export const { 
     useGetUserQuery,
     useValidUserQuery,
-    useRefreshTokenQuery,
+    useRefreshTokenMutation,
     useLogoutMutation,
     useAddBotToChannelMutation,
     useRemoveBotFromChannelMutation,
