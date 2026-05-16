@@ -128,13 +128,33 @@ export type CustomCommandSingleResponse = {
 export const CUSTOM_COMMAND_RESPONSE_MAX = 450
 export const CUSTOM_COMMANDS_MAX_PER_CHANNEL = 50
 
+export type ChannelEligibilityChecks = {
+    isPartner: boolean
+    isAffiliate: boolean
+    meetsFollowerThreshold: boolean
+}
+
+export type ChannelEligibilityResponse = {
+    success: boolean
+    eligible: boolean
+    broadcasterId: string
+    login?: string
+    broadcasterType: "" | "affiliate" | "partner"
+    followerTotal: number | null
+    checks: ChannelEligibilityChecks
+    minFollowers: number
+    failureReasons: string[]
+    bypassed?: boolean
+    disabled?: boolean
+}
+
 export const api = createApi({
     reducerPath: "api",
     baseQuery: fetchBaseQuery({ 
         baseUrl: import.meta.env.VITE_BACKEND_URL,
         credentials: 'include'
     }),
-    tagTypes: ["User","Valid","Refresh","Auth","BotStatus","ChatModules","ChannelAiPrompt","CustomCommands"],
+    tagTypes: ["User","Valid","Refresh","Auth","BotStatus","ChatModules","ChannelAiPrompt","CustomCommands","ChannelEligibility"],
     endpoints: (builder) => ({
         getUser: builder.query<User, void>({
             query: () => '/api/auth/twitch/user',
@@ -186,6 +206,15 @@ export const api = createApi({
             }),
             providesTags: (_result, _err, channelId) => [
                 { type: "BotStatus", id: channelId },
+            ],
+        }),
+        getChannelEligibility: builder.query<ChannelEligibilityResponse, string>({
+            query: (channelId) => ({
+                url: "/api/auth/railway/channel-eligibility",
+                params: { channelId },
+            }),
+            providesTags: (_result, _err, channelId) => [
+                { type: "ChannelEligibility", id: channelId },
             ],
         }),
         getManagedChannels: builder.query<ManagedChannelsResponse, void>({
@@ -296,6 +325,7 @@ export const {
     useAddBotToChannelMutation,
     useRemoveBotFromChannelMutation,
     useGetBotChannelStatusQuery,
+    useGetChannelEligibilityQuery,
     useGetManagedChannelsQuery,
     useGetChatModulesQuery,
     usePatchChatModuleMutation,

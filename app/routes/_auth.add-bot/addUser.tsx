@@ -2,9 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import {
   useAddBotToChannelMutation,
   useGetBotChannelStatusQuery,
+  useGetChannelEligibilityQuery,
   useGetManagedChannelsQuery,
   useGetUserQuery,
   useRemoveBotFromChannelMutation,
+  type ChannelEligibilityResponse,
 } from "~/api/api";
 import { BotStatusPanel } from "./BotStatusPanel";
 import { ChannelAiPromptPanel } from "./ChannelAiPromptPanel";
@@ -16,12 +18,26 @@ function pickErrorMessage(error: unknown): string {
   if (error && typeof error === "object" && "data" in error) {
     const data = (error as { data?: unknown }).data;
     if (data && typeof data === "object") {
-      const d = data as { message?: string; error?: string };
+      const d = data as {
+        message?: string;
+        error?: string;
+        code?: string;
+        eligibility?: ChannelEligibilityResponse;
+      };
+      if (d.code === "channel_not_eligible" && d.eligibility?.failureReasons?.length) {
+        return d.eligibility.failureReasons.join(" ");
+      }
       if (d.message) return String(d.message);
       if (d.error) return String(d.error);
     }
   }
   return "Ошибка запроса";
+}
+
+function broadcasterTypeLabel(t: ChannelEligibilityResponse["broadcasterType"]): string {
+  if (t === "partner") return "Partner";
+  if (t === "affiliate") return "Affiliate";
+  return "нет";
 }
 
 export default function AddUser() {
@@ -52,6 +68,18 @@ export default function AddUser() {
   });
 
   const waitingFirstStatus = botStatusLoading && !botStatus;
+
+  const needsEligibilityCheck =
+    canManageBotConnection && Boolean(selectedChannelId) && botStatus?.subscribed !== true;
+
+  const { data: eligibility, isLoading: eligibilityLoading, isError: eligibilityError } =
+    useGetChannelEligibilityQuery(selectedChannelId, {
+      skip: !needsEligibilityCheck,
+    });
+
+  const canConnectBot =
+    !needsEligibilityCheck ||
+    (eligibility?.success === true && eligibility.eligible === true);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -171,6 +199,50 @@ export default function AddUser() {
         )}
         {canManageBotConnection ? (
           <>
+            {needsEligibilityCheck && (
+              <div
+                className={`${s.eligibilityBox} ${
+                  eligibilityLoading ? "" : eligibility?.eligible ? s.eligibilityOk : s.eligibilityFail
+                }`}
+                role="status"
+              >
+                {eligibilityLoading ? (
+                  <p className={s.eligibilityTitle}>Проверка канала для подключения бота…</p>
+                ) : eligibilityError || !eligibility?.success ? (
+                  <>
+                    <p className={s.eligibilityTitle}>Не удалось проверить канал</p>
+                    <p className={s.eligibilityMeta}>Повторите позже. Подключение временно недоступно.</p>
+                  </>
+                ) : eligibility.eligible ? (
+                  <>
+                    <p className={s.eligibilityTitle}>Канал подходит для подключения бота</p>
+                    <p className={s.eligibilityMeta}>
+                      {eligibility.login ? `@${eligibility.login}` : eligibility.broadcasterId} · статус Twitch:{" "}
+                      {broadcasterTypeLabel(eligibility.broadcasterType)}
+                      {eligibility.followerTotal !== null ? ` · фоловеров: ${eligibility.followerTotal}` : null}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className={s.eligibilityTitle}>Канал пока не подходит для подключения бота</p>
+                    <p className={s.eligibilityMeta}>
+                      Нужно одно из условий: Twitch Affiliate, Partner или не менее {eligibility.minFollowers} фоловеров.
+                      {eligibility.followerTotal !== null
+                        ? ` Сейчас: ${eligibility.followerTotal} фоловеров, статус: ${broadcasterTypeLabel(eligibility.broadcasterType)}.`
+                        : null}
+                    </p>
+                    {eligibility.failureReasons.length > 0 && (
+                      <ul className={s.eligibilityList}>
+                        {eligibility.failureReasons.map((reason) => (
+                          <li key={reason}>{reason}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
             {waitingFirstStatus ? (
               <p className={s.hint}>Проверка статуса подключения…</p>
             ) : (
@@ -189,7 +261,12 @@ export default function AddUser() {
                     <button
                       type="button"
                       className={s.buttonPrimary}
-                      disabled={addState.isLoading || removeState.isLoading || !selectedChannelId}
+                      disabled={
+                        addState.isLoading ||
+                        removeState.isLoading ||
+                        !selectedChannelId ||
+                        !canConnectBot
+                      }
                       onClick={() => void handleAdd()}
                     >
                       {addState.isLoading ? "Подключение…" : "Подключить бота и выдать модератора"}
@@ -200,7 +277,12 @@ export default function AddUser() {
                     <button
                       type="button"
                       className={s.buttonPrimary}
-                      disabled={addState.isLoading || removeState.isLoading || !selectedChannelId}
+                      disabled={
+                        addState.isLoading ||
+                        removeState.isLoading ||
+                        !selectedChannelId ||
+                        !canConnectBot
+                      }
                       onClick={() => void handleAdd()}
                     >
                       {addState.isLoading ? "Подключение…" : "Подключить бота и выдать модератора"}
