@@ -22,8 +22,14 @@ function pickErrorMessage(error: unknown): string {
         message?: string;
         error?: string;
         code?: string;
+        reason?: string | null;
         eligibility?: ChannelEligibilityResponse;
       };
+      if (d.code === "channel_banned") {
+        return d.reason
+          ? `Канал заблокирован: ${d.reason}`
+          : d.message || "Канал заблокирован для использования бота";
+      }
       if (d.code === "channel_not_eligible" && d.eligibility?.failureReasons?.length) {
         return d.eligibility.failureReasons.join(" ");
       }

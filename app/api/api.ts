@@ -134,6 +134,32 @@ export type ChannelEligibilityChecks = {
     meetsFollowerThreshold: boolean
 }
 
+export type AdminMeResponse = {
+    success: boolean
+    isAdmin: boolean
+    userId?: string
+    login?: string
+}
+
+export type AdminChannelItem = {
+    channelId: string
+    login: string | null
+    addedAt: string | null
+    subscribed: boolean
+    streamLive: boolean
+    botEnabled: boolean
+    banned: boolean
+    banReason: string | null
+    bannedAt: string | null
+    bannedBy: string | null
+}
+
+export type AdminChannelsResponse = {
+    success: boolean
+    channels: AdminChannelItem[]
+    count: number
+}
+
 export type ChannelEligibilityResponse = {
     success: boolean
     eligible: boolean
@@ -154,7 +180,7 @@ export const api = createApi({
         baseUrl: import.meta.env.VITE_BACKEND_URL,
         credentials: 'include'
     }),
-    tagTypes: ["User","Valid","Refresh","Auth","BotStatus","ChatModules","ChannelAiPrompt","CustomCommands","ChannelEligibility"],
+    tagTypes: ["User","Valid","Refresh","Auth","BotStatus","ChatModules","ChannelAiPrompt","CustomCommands","ChannelEligibility","Admin"],
     endpoints: (builder) => ({
         getUser: builder.query<User, void>({
             query: () => '/api/auth/twitch/user',
@@ -314,6 +340,47 @@ export const api = createApi({
             }),
             invalidatesTags: (_result, _err, arg) => [{ type: "CustomCommands", id: arg.channelId }],
         }),
+        getAdminMe: builder.query<AdminMeResponse, void>({
+            query: () => "/api/auth/admin/me",
+            providesTags: [{ type: "Admin", id: "me" }],
+        }),
+        getAdminChannels: builder.query<AdminChannelsResponse, void>({
+            query: () => "/api/auth/admin/channels",
+            providesTags: [{ type: "Admin", id: "channels" }],
+        }),
+        adminDisconnectChannel: builder.mutation<
+            { success: boolean; channelId: string },
+            { channelId: string }
+        >({
+            query: (body) => ({
+                url: "/api/auth/admin/channels/disconnect",
+                method: "POST",
+                body,
+            }),
+            invalidatesTags: [{ type: "Admin", id: "channels" }, "BotStatus"],
+        }),
+        adminBanChannel: builder.mutation<
+            { success: boolean; channelId: string; banned: boolean },
+            { channelId: string; reason?: string }
+        >({
+            query: (body) => ({
+                url: "/api/auth/admin/channels/ban",
+                method: "POST",
+                body,
+            }),
+            invalidatesTags: [{ type: "Admin", id: "channels" }, "BotStatus"],
+        }),
+        adminUnbanChannel: builder.mutation<
+            { success: boolean; channelId: string },
+            { channelId: string }
+        >({
+            query: (body) => ({
+                url: "/api/auth/admin/channels/unban",
+                method: "POST",
+                body,
+            }),
+            invalidatesTags: [{ type: "Admin", id: "channels" }],
+        }),
     })
 });
 
@@ -335,4 +402,9 @@ export const {
     useCreateCustomCommandMutation,
     usePatchCustomCommandMutation,
     useDeleteCustomCommandMutation,
+    useGetAdminMeQuery,
+    useGetAdminChannelsQuery,
+    useAdminDisconnectChannelMutation,
+    useAdminBanChannelMutation,
+    useAdminUnbanChannelMutation,
 } = api;
