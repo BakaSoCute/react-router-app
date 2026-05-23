@@ -1,17 +1,5 @@
-import { useEffect, useState } from "react";
 import { useGetBotChannelStatusQuery } from "~/api/api";
 import s from "./BotStatusPanel.module.css";
-
-function formatCountdown(ms: number): string {
-  const totalSec = Math.max(0, Math.ceil(ms / 1000));
-  const h = Math.floor(totalSec / 3600);
-  const m = Math.floor((totalSec % 3600) / 60);
-  const sec = totalSec % 60;
-  if (h > 0) {
-    return `${h}:${m.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
-  }
-  return `${m}:${sec.toString().padStart(2, "0")}`;
-}
 
 function statusMessage(error: unknown): string {
   if (error && typeof error === "object" && "data" in error) {
@@ -40,22 +28,6 @@ export function BotStatusPanel({ channelId }: Props) {
       pollingInterval: 30_000,
     }
   );
-
-  const endsAt = data?.timer?.endsAt;
-  const timerActive = Boolean(data?.timer?.active && endsAt && endsAt > Date.now());
-
-  const [displayMs, setDisplayMs] = useState(0);
-
-  useEffect(() => {
-    if (!timerActive || !endsAt) {
-      setDisplayMs(0);
-      return;
-    }
-    const tick = () => setDisplayMs(Math.max(0, endsAt - Date.now()));
-    tick();
-    const id = window.setInterval(tick, 1000);
-    return () => window.clearInterval(id);
-  }, [timerActive, endsAt, data?.timer?.remainingMs]);
 
   if (isLoading && !data) {
     return (
@@ -134,23 +106,6 @@ export function BotStatusPanel({ channelId }: Props) {
           </span>
         </div>
 
-        <div className={s.row}>
-          <span className={s.label}>Таймер !baka timer</span>
-          <span className={s.value}>
-            {timerActive && displayMs > 0 ? (
-              <>
-                <span className={s.timerBig}>{formatCountdown(displayMs)}</span>
-                {data.timer.totalMinutes != null ? (
-                  <div className={s.meta}>
-                    Задано: {data.timer.totalMinutes} мин.
-                  </div>
-                ) : null}
-              </>
-            ) : (
-              <span className={s.meta}>Не запущен</span>
-            )}
-          </span>
-        </div>
       </div>
 
       <p className={s.polling}>

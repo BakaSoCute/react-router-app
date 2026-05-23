@@ -64,15 +64,18 @@ export default function mainPage() {
               <code className={s.code}>!baka on/off</code> - включение или выключение бота.
             </li>
             <li>
-              <code className={s.code}>!baka timer "число"</code> - таймер на N минут.
+              <code className={s.code}>!timer число [имя]</code> — таймер на N минут (без имени — ваш ник).
             </li>
             <li>
-              <code className={s.code}>!baka timer clear</code> - очистка таймера.
+              <code className={s.code}>!timer clear [имя]</code> — отмена таймера (модераторы).
+            </li>
+            <li>
+              <code className={s.code}>!baka timer …</code> — то же, что <code className={s.code}>!timer</code>.
             </li>
           </ul>
 
           <p className={s.text}>
-            Команды <code className={s.code}>on/off/timer/timer clear</code> доступны только модераторам и стримеру.
+            Команды <code className={s.code}>on/off/status</code> и отмена таймеров — модераторам; запуск таймера настраивается на сайте по имени.
           </p>
           <p className={s.text}>
             Обращение <code className={s.code}>@TsundereChanAI</code> работает с памятью. Также можно отвечать прямо на сообщение бота.

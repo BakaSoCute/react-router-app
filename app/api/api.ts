@@ -46,18 +46,31 @@ type RemoveBotResponse = {
     moderator?: { ok?: boolean; error?: string }
 }
 
+export type ChannelTimerSnapshot = {
+    name: string
+    active: boolean
+    remainingMs: number
+    totalMinutes: number
+    endsAt: number
+    startedByUserId: string
+    startedByLogin: string
+    userLevel: CustomCommandUserLevel
+}
+
 export type BotChannelStatus = {
     channelId: string
     subscribed: boolean
     eventsubConnected: boolean
     streamLive: boolean
     botEnabled: boolean
-    timer: {
-        active: boolean
-        remainingMs?: number
-        totalMinutes?: number
-        endsAt?: number
-    }
+    timers: ChannelTimerSnapshot[]
+}
+
+export type TimersResponse = {
+    success: boolean
+    channelId: string
+    active: ChannelTimerSnapshot[]
+    permissions: { name: string; userLevel: CustomCommandUserLevel }[]
 }
 
 export type ManagedChannel = {
@@ -180,7 +193,7 @@ export const api = createApi({
         baseUrl: import.meta.env.VITE_BACKEND_URL,
         credentials: 'include'
     }),
-    tagTypes: ["User","Valid","Refresh","Auth","BotStatus","ChatModules","ChannelAiPrompt","CustomCommands","ChannelEligibility","Admin"],
+    tagTypes: ["User","Valid","Refresh","Auth","BotStatus","ChatModules","ChannelAiPrompt","CustomCommands","Timers","ChannelEligibility","Admin"],
     endpoints: (builder) => ({
         getUser: builder.query<User, void>({
             query: () => '/api/auth/twitch/user',
@@ -216,7 +229,7 @@ export const api = createApi({
                 method: "POST",
                 body: body ?? {},
             }),
-            invalidatesTags: ["BotStatus", "ChatModules", "ChannelAiPrompt", "CustomCommands"],
+            invalidatesTags: ["BotStatus", "ChatModules", "ChannelAiPrompt", "CustomCommands", "Timers"],
         }),
         removeBotFromChannel: builder.mutation<RemoveBotResponse, { channelId?: string } | void>({
             query: (body) => ({
@@ -224,7 +237,7 @@ export const api = createApi({
                 method: "POST",
                 body: body ?? {},
             }),
-            invalidatesTags: ["BotStatus", "ChatModules", "ChannelAiPrompt", "CustomCommands"],
+            invalidatesTags: ["BotStatus", "ChatModules", "ChannelAiPrompt", "CustomCommands", "Timers"],
         }),
         getBotChannelStatus: builder.query<BotChannelStatus, string>({
             query: (channelId) => ({
@@ -341,6 +354,56 @@ export const api = createApi({
             }),
             invalidatesTags: (_result, _err, arg) => [{ type: "CustomCommands", id: arg.channelId }],
         }),
+        getChannelTimers: builder.query<TimersResponse, string>({
+            query: (channelId) => ({
+                url: "/api/auth/railway/timers",
+                params: { channelId },
+            }),
+            providesTags: (result) =>
+                result?.channelId ? [{ type: "Timers", id: result.channelId }] : [],
+        }),
+        patchTimerPermission: builder.mutation<
+            { success: boolean; channelId: string; permission: { name: string; userLevel: CustomCommandUserLevel } },
+            { channelId: string; name: string; userLevel: CustomCommandUserLevel }
+        >({
+            query: (body) => ({
+                url: "/api/auth/railway/timers/permissions",
+                method: "PATCH",
+                body,
+            }),
+            invalidatesTags: (_result, _err, arg) => [
+                { type: "Timers", id: arg.channelId },
+                { type: "BotStatus", id: arg.channelId },
+            ],
+        }),
+        startChannelTimer: builder.mutation<
+            { success: boolean; channelId: string; active: ChannelTimerSnapshot[] },
+            { channelId: string; minutes: number; name?: string }
+        >({
+            query: (body) => ({
+                url: "/api/auth/railway/timers/start",
+                method: "POST",
+                body,
+            }),
+            invalidatesTags: (_result, _err, arg) => [
+                { type: "Timers", id: arg.channelId },
+                { type: "BotStatus", id: arg.channelId },
+            ],
+        }),
+        cancelChannelTimer: builder.mutation<
+            { success: boolean; channelId: string; active: ChannelTimerSnapshot[] },
+            { channelId: string; name?: string }
+        >({
+            query: (body) => ({
+                url: "/api/auth/railway/timers/cancel",
+                method: "POST",
+                body,
+            }),
+            invalidatesTags: (_result, _err, arg) => [
+                { type: "Timers", id: arg.channelId },
+                { type: "BotStatus", id: arg.channelId },
+            ],
+        }),
         getAdminMe: builder.query<AdminMeResponse, void>({
             query: () => "/api/auth/admin/me",
             providesTags: [{ type: "Admin", id: "me" }],
@@ -403,6 +466,10 @@ export const {
     useCreateCustomCommandMutation,
     usePatchCustomCommandMutation,
     useDeleteCustomCommandMutation,
+    useGetChannelTimersQuery,
+    usePatchTimerPermissionMutation,
+    useStartChannelTimerMutation,
+    useCancelChannelTimerMutation,
     useGetAdminMeQuery,
     useGetAdminChannelsQuery,
     useAdminDisconnectChannelMutation,

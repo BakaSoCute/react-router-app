@@ -12,6 +12,7 @@ import { BotStatusPanel } from "./BotStatusPanel";
 import { ChannelAiPromptPanel } from "./ChannelAiPromptPanel";
 import { ChatModulesPanel } from "./ChatModulesPanel";
 import { CustomCommandsPanel } from "./CustomCommandsPanel";
+import { TimersPanel } from "./TimersPanel";
 import s from "./addUser.module.css";
 
 function pickErrorMessage(error: unknown): string {
@@ -187,6 +188,11 @@ export default function AddUser() {
       />
 
       <CustomCommandsPanel
+        channelId={selectedChannelId || user.id}
+        subscribed={Boolean(botStatus?.subscribed)}
+      />
+
+      <TimersPanel
         channelId={selectedChannelId || user.id}
         subscribed={Boolean(botStatus?.subscribed)}
       />

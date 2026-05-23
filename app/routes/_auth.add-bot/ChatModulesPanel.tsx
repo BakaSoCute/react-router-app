@@ -63,7 +63,7 @@ export function ChatModulesPanel({ channelId, subscribed }: Props) {
       <h2 className={s.title}>Модули чата</h2>
       <p className={s.lead}>
         Включайте и отключайте интерактив по каналу. Управление командами <code className={s.code}>!baka on</code> /{" "}
-        <code className={s.code}>!baka off</code> и таймером остаётся в чате и не зависит от этих переключателей.
+        <code className={s.code}>!baka off</code> и <code className={s.code}>!timer</code> остаются в чате и не зависят от этих переключателей.
       </p>
       <div className={s.list}>
         {data.modules.map((mod) => {
