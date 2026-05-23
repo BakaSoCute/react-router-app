@@ -33,13 +33,30 @@ function formatCountdown(ms: number): string {
   return `${m}:${sec.toString().padStart(2, "0")}`;
 }
 
+const TIMER_ERROR_LABELS: Record<string, string> = {
+  timer_already_active: "Таймер с таким именем уже запущен.",
+  timers_limit_reached: "Достигнут лимит активных таймеров на канале (15).",
+  invalid_timer_name: "Некорректное имя таймера (2–32 символа: латиница, цифры, _).",
+  invalid_minutes: "Укажите длительность от 2 до 240 минут.",
+  started_by_required: "Не удалось определить пользователя.",
+};
+
 function pickFetchError(error: unknown): string {
   if (error && typeof error === "object" && "data" in error) {
     const data = (error as { data?: unknown }).data;
     if (data && typeof data === "object") {
       const d = data as { message?: string; error?: string };
+      if (typeof d.error === "string" && TIMER_ERROR_LABELS[d.error]) {
+        return TIMER_ERROR_LABELS[d.error];
+      }
       if (d.message) return String(d.message);
       if (d.error) return String(d.error);
+    }
+    if ("status" in error) {
+      const status = (error as { status?: number }).status;
+      if (status === 409) {
+        return TIMER_ERROR_LABELS.timer_already_active;
+      }
     }
   }
   return "Ошибка запроса";
@@ -100,7 +117,7 @@ export function TimersPanel({ channelId, subscribed }: Props) {
 
   const { data, error, isLoading, isFetching, refetch } = useGetChannelTimersQuery(channelId, {
     skip: !channelId || !subscribed,
-    pollingInterval: 12_000,
+    pollingInterval: 30_000,
   });
 
   const [startTimer, startState] = useStartChannelTimerMutation();
@@ -110,6 +127,7 @@ export function TimersPanel({ channelId, subscribed }: Props) {
   const [minutes, setMinutes] = useState("30");
   const [timerName, setTimerName] = useState("");
   const [invokeLevel, setInvokeLevel] = useState<CustomCommandUserLevel>("mod");
+  const [startErr, setStartErr] = useState<string | null>(null);
 
   const busy = startState.isLoading || cancelState.isLoading || patchPermState.isLoading;
 
@@ -132,6 +150,7 @@ export function TimersPanel({ channelId, subscribed }: Props) {
   const handleStart = async () => {
     const m = Number.parseInt(minutes, 10);
     if (!Number.isFinite(m)) return;
+    setStartErr(null);
     try {
       const body: { channelId: string; minutes: number; name?: string } = {
         channelId,
@@ -140,8 +159,9 @@ export function TimersPanel({ channelId, subscribed }: Props) {
       const trimmedName = timerName.trim();
       if (trimmedName) body.name = trimmedName;
       await startTimer(body).unwrap();
-    } catch {
-      /* RTK */
+      setTimerName("");
+    } catch (e) {
+      setStartErr(pickFetchError(e));
     }
   };
 
@@ -253,6 +273,11 @@ export function TimersPanel({ channelId, subscribed }: Props) {
           {startState.isLoading ? "Запуск…" : "Запустить"}
         </button>
       </div>
+      {startErr ? (
+        <p className={s.errorBox} role="alert">
+          {startErr}
+        </p>
+      ) : null}
 
       <h3 className={s.sectionTitle}>Активные таймеры</h3>
       {active.length === 0 ? (
@@ -265,7 +290,7 @@ export function TimersPanel({ channelId, subscribed }: Props) {
         </div>
       )}
 
-      <p className={s.polling}>{isFetching ? "Обновление…" : "Автообновление каждые 12 с"}</p>
+      <p className={s.polling}>{isFetching ? "Обновление…" : "Автообновление каждые 30 с"}</p>
     </section>
   );
 }

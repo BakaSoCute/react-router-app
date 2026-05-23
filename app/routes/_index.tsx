@@ -58,7 +58,7 @@ export default function mainPage() {
               <code className={s.code}>!baka "запрос"</code> - запрос к боту без учёта памяти.
             </li>
             <li>
-              <code className={s.code}>!baka status</code> - информация о состоянии бота.
+              <code className={s.code}>!baka status</code> — статус бота и все активные таймеры (доступно всем).
             </li>
             <li>
               <code className={s.code}>!baka on/off</code> - включение или выключение бота.
@@ -75,7 +75,7 @@ export default function mainPage() {
           </ul>
 
           <p className={s.text}>
-            Команды <code className={s.code}>on/off/status</code> и отмена таймеров — модераторам. Кто может
+            Команды <code className={s.code}>on/off</code> и отмена таймеров — модераторам. <code className={s.code}>!baka status</code> — у всех. Кто может
             вызывать <code className={s.code}>!timer</code> в чате, задаётся одной настройкой на канале в панели;
             имя таймера зрители указывают сами.
           </p>
