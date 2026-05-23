@@ -70,7 +70,8 @@ export type TimersResponse = {
     success: boolean
     channelId: string
     active: ChannelTimerSnapshot[]
-    permissions: { name: string; userLevel: CustomCommandUserLevel }[]
+    /** Кто может вызывать !timer в чате (для всех имён таймеров на канале). */
+    invokeUserLevel: CustomCommandUserLevel
 }
 
 export type ManagedChannel = {
@@ -363,8 +364,8 @@ export const api = createApi({
                 result?.channelId ? [{ type: "Timers", id: result.channelId }] : [],
         }),
         patchTimerPermission: builder.mutation<
-            { success: boolean; channelId: string; permission: { name: string; userLevel: CustomCommandUserLevel } },
-            { channelId: string; name: string; userLevel: CustomCommandUserLevel }
+            { success: boolean; channelId: string; invokeUserLevel: CustomCommandUserLevel },
+            { channelId: string; userLevel: CustomCommandUserLevel }
         >({
             query: (body) => ({
                 url: "/api/auth/railway/timers/permissions",

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   type ChannelTimerSnapshot,
   type CustomCommandUserLevel,
@@ -16,9 +16,9 @@ type Props = {
 };
 
 const USER_LEVEL_OPTIONS: { value: CustomCommandUserLevel; label: string }[] = [
-  { value: "everyone", label: "Все" },
+  { value: "everyone", label: "Любой зритель" },
   { value: "vip", label: "VIP и выше" },
-  { value: "mod", label: "Модераторы" },
+  { value: "mod", label: "Модераторы и выше" },
   { value: "broadcaster", label: "Только стример" },
 ];
 
@@ -45,17 +45,12 @@ function pickFetchError(error: unknown): string {
   return "Ошибка запроса";
 }
 
-function levelLabel(level: CustomCommandUserLevel): string {
-  return USER_LEVEL_OPTIONS.find((o) => o.value === level)?.label ?? level;
-}
-
 function displayName(name: string): string {
   return `@${name}`;
 }
 
 type ActiveRowProps = {
   timer: ChannelTimerSnapshot;
-  channelId: string;
   busy: boolean;
   onCancel: (name: string) => void;
 };
@@ -89,59 +84,12 @@ function ActiveTimerRow({ timer, busy, onCancel }: ActiveRowProps) {
         <>
           <span className={s.timerBig}>{formatCountdown(displayMs)}</span>
           <p className={s.meta}>
-            Задано: {timer.totalMinutes} мин. · запустил @{timer.startedByLogin} · права:{" "}
-            {levelLabel(timer.userLevel)}
+            Задано: {timer.totalMinutes} мин. · вызвал @{timer.startedByLogin}
           </p>
         </>
       ) : (
         <p className={s.meta}>Завершается…</p>
       )}
-    </div>
-  );
-}
-
-type PermRowProps = {
-  channelId: string;
-  name: string;
-  userLevel: CustomCommandUserLevel;
-  busy: boolean;
-};
-
-function PermissionRow({ channelId, name, userLevel, busy }: PermRowProps) {
-  const [level, setLevel] = useState(userLevel);
-  const [patchPermission, patchState] = usePatchTimerPermissionMutation();
-
-  useEffect(() => {
-    setLevel(userLevel);
-  }, [userLevel]);
-
-  const handleChange = async (next: CustomCommandUserLevel) => {
-    setLevel(next);
-    try {
-      await patchPermission({ channelId, name, userLevel: next }).unwrap();
-    } catch {
-      setLevel(userLevel);
-    }
-  };
-
-  const rowBusy = busy || patchState.isLoading;
-
-  return (
-    <div className={s.permRow}>
-      <span className={s.timerName}>{displayName(name)}</span>
-      <select
-        className={s.select}
-        value={level}
-        disabled={rowBusy}
-        onChange={(e) => void handleChange(e.target.value as CustomCommandUserLevel)}
-        aria-label={`Права для таймера ${name}`}
-      >
-        {USER_LEVEL_OPTIONS.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
     </div>
   );
 }
@@ -161,21 +109,25 @@ export function TimersPanel({ channelId, subscribed }: Props) {
 
   const [minutes, setMinutes] = useState("30");
   const [timerName, setTimerName] = useState("");
-  const [newPermName, setNewPermName] = useState("");
-  const [newPermLevel, setNewPermLevel] = useState<CustomCommandUserLevel>("mod");
+  const [invokeLevel, setInvokeLevel] = useState<CustomCommandUserLevel>("mod");
 
-  const busy =
-    startState.isLoading || cancelState.isLoading || patchPermState.isLoading;
+  const busy = startState.isLoading || cancelState.isLoading || patchPermState.isLoading;
 
   const active = data?.active ?? [];
-  const permissions = data?.permissions ?? [];
+  const serverInvokeLevel = data?.invokeUserLevel ?? "mod";
 
-  const permissionNames = useMemo(() => {
-    const names = new Set<string>();
-    for (const p of permissions) names.add(p.name);
-    for (const t of active) names.add(t.name);
-    return [...names].sort((a, b) => a.localeCompare(b));
-  }, [permissions, active]);
+  useEffect(() => {
+    setInvokeLevel(serverInvokeLevel);
+  }, [serverInvokeLevel]);
+
+  const handleInvokeLevelChange = async (next: CustomCommandUserLevel) => {
+    setInvokeLevel(next);
+    try {
+      await patchPermission({ channelId, userLevel: next }).unwrap();
+    } catch {
+      setInvokeLevel(serverInvokeLevel);
+    }
+  };
 
   const handleStart = async () => {
     const m = Number.parseInt(minutes, 10);
@@ -194,17 +146,6 @@ export function TimersPanel({ channelId, subscribed }: Props) {
   const handleCancel = async (name: string) => {
     try {
       await cancelTimer({ channelId, name }).unwrap();
-    } catch {
-      /* RTK */
-    }
-  };
-
-  const handleAddPermission = async () => {
-    const name = newPermName.trim().toLowerCase().replace(/^[@!]+/, "");
-    if (!name) return;
-    try {
-      await patchPermission({ channelId, name, userLevel: newPermLevel }).unwrap();
-      setNewPermName("");
     } catch {
       /* RTK */
     }
@@ -246,12 +187,38 @@ export function TimersPanel({ channelId, subscribed }: Props) {
     <section className={s.panel}>
       <h2 className={s.title}>Таймеры</h2>
       <p className={s.lead}>
-        В чате: <code className={s.code}>!timer &lt;мин&gt; [имя]</code> (без имени — ваш ник).{" "}
-        <code className={s.code}>!baka timer</code> — то же самое. Отмена:{" "}
+        В чате: <code className={s.code}>!timer &lt;мин&gt; [имя]</code> — имя задаёт зритель (без имени
+        используется его ник). <code className={s.code}>!baka timer</code> — то же. Отмена:{" "}
         <code className={s.code}>!timer clear [имя]</code> (модераторы).
       </p>
 
-      <h3 className={s.sectionTitle}>Запустить таймер</h3>
+      <h3 className={s.sectionTitle}>Кто может вызывать !timer в чате</h3>
+      <p className={s.lead}>
+        Одна настройка на весь канал: какие зрители могут писать команду запуска таймера. Имя каждого таймера
+        задаётся отдельно при запуске.
+      </p>
+      <div className={s.form}>
+        <div className={s.field}>
+          <label className={s.label} htmlFor="timer-invoke-level">
+            Минимальная роль в чате
+          </label>
+          <select
+            id="timer-invoke-level"
+            className={s.select}
+            value={invokeLevel}
+            disabled={busy}
+            onChange={(e) => void handleInvokeLevelChange(e.target.value as CustomCommandUserLevel)}
+          >
+            {USER_LEVEL_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <h3 className={s.sectionTitle}>Запустить таймер с сайта</h3>
       <div className={s.form}>
         <div className={s.field}>
           <label className={s.label} htmlFor="timer-minutes">
@@ -269,13 +236,13 @@ export function TimersPanel({ channelId, subscribed }: Props) {
         </div>
         <div className={s.field}>
           <label className={s.label} htmlFor="timer-name">
-            Имя (необязательно)
+            Имя таймера (необязательно)
           </label>
           <input
             id="timer-name"
             className={s.input}
             type="text"
-            placeholder={userLogin ? `@${userLogin}` : "ваш ник"}
+            placeholder={userLogin ? `по умолчанию @${userLogin}` : "по умолчанию ваш ник"}
             value={timerName}
             onChange={(e) => setTimerName(e.target.value)}
           />
@@ -291,82 +258,10 @@ export function TimersPanel({ channelId, subscribed }: Props) {
       ) : (
         <div className={s.list}>
           {active.map((t) => (
-            <ActiveTimerRow
-              key={t.name}
-              timer={t}
-              channelId={channelId}
-              busy={busy}
-              onCancel={(name) => void handleCancel(name)}
-            />
+            <ActiveTimerRow key={t.name} timer={t} busy={busy} onCancel={(name) => void handleCancel(name)} />
           ))}
         </div>
       )}
-
-      <h3 className={s.sectionTitle}>Права на запуск по имени</h3>
-      <p className={s.lead}>
-        По умолчанию новое имя доступно только модераторам. Выберите «Все», чтобы зрители могли запускать таймер с
-        этим именем.
-      </p>
-      {permissionNames.length > 0 ? (
-        <div className={s.list}>
-          {permissionNames.map((name) => {
-            const perm = permissions.find((p) => p.name === name);
-            const level = perm?.userLevel ?? active.find((t) => t.name === name)?.userLevel ?? "mod";
-            return (
-              <PermissionRow
-                key={name}
-                channelId={channelId}
-                name={name}
-                userLevel={level}
-                busy={busy}
-              />
-            );
-          })}
-        </div>
-      ) : (
-        <p className={s.empty}>Пока нет настроенных имён — появятся после первого таймера.</p>
-      )}
-
-      <h3 className={s.sectionTitle}>Добавить правило для имени</h3>
-      <div className={s.form}>
-        <div className={s.field}>
-          <label className={s.label} htmlFor="perm-name">
-            Имя таймера
-          </label>
-          <input
-            id="perm-name"
-            className={s.input}
-            type="text"
-            value={newPermName}
-            onChange={(e) => setNewPermName(e.target.value)}
-          />
-        </div>
-        <div className={s.field}>
-          <label className={s.label} htmlFor="perm-level">
-            Кто может запускать
-          </label>
-          <select
-            id="perm-level"
-            className={s.select}
-            value={newPermLevel}
-            onChange={(e) => setNewPermLevel(e.target.value as CustomCommandUserLevel)}
-          >
-            {USER_LEVEL_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <button
-          type="button"
-          className={s.buttonGhost}
-          disabled={busy || !newPermName.trim()}
-          onClick={() => void handleAddPermission()}
-        >
-          Сохранить
-        </button>
-      </div>
 
       <p className={s.polling}>{isFetching ? "Обновление…" : "Автообновление каждые 12 с"}</p>
     </section>

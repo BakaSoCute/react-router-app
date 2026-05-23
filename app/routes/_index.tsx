@@ -75,7 +75,9 @@ export default function mainPage() {
           </ul>
 
           <p className={s.text}>
-            Команды <code className={s.code}>on/off/status</code> и отмена таймеров — модераторам; запуск таймера настраивается на сайте по имени.
+            Команды <code className={s.code}>on/off/status</code> и отмена таймеров — модераторам. Кто может
+            вызывать <code className={s.code}>!timer</code> в чате, задаётся одной настройкой на канале в панели;
+            имя таймера зрители указывают сами.
           </p>
           <p className={s.text}>
             Обращение <code className={s.code}>@TsundereChanAI</code> работает с памятью. Также можно отвечать прямо на сообщение бота.
