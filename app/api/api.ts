@@ -48,6 +48,7 @@ type RemoveBotResponse = {
 
 export type ChannelTimerSnapshot = {
     name: string
+    nameIsDefault: boolean
     active: boolean
     remainingMs: number
     totalMinutes: number

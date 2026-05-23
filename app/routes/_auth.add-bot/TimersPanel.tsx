@@ -62,8 +62,8 @@ function pickFetchError(error: unknown): string {
   return "Ошибка запроса";
 }
 
-function displayName(name: string): string {
-  return `@${name}`;
+function displayTimerTitle(timer: ChannelTimerSnapshot): string {
+  return timer.nameIsDefault ? `@${timer.name}` : timer.name;
 }
 
 type ActiveRowProps = {
@@ -87,7 +87,7 @@ function ActiveTimerRow({ timer, busy, onCancel }: ActiveRowProps) {
   return (
     <div className={s.row}>
       <div className={s.rowHead}>
-        <h3 className={s.timerName}>{displayName(timer.name)}</h3>
+        <h3 className={s.timerName}>{displayTimerTitle(timer)}</h3>
         <button
           type="button"
           className={s.buttonDanger}
