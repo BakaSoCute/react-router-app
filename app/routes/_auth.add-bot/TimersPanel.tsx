@@ -133,11 +133,13 @@ export function TimersPanel({ channelId, subscribed }: Props) {
     const m = Number.parseInt(minutes, 10);
     if (!Number.isFinite(m)) return;
     try {
-      await startTimer({
+      const body: { channelId: string; minutes: number; name?: string } = {
         channelId,
         minutes: m,
-        name: timerName.trim() || undefined,
-      }).unwrap();
+      };
+      const trimmedName = timerName.trim();
+      if (trimmedName) body.name = trimmedName;
+      await startTimer(body).unwrap();
     } catch {
       /* RTK */
     }
