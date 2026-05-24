@@ -75,7 +75,7 @@ export default function mainPage() {
           </ul>
 
           <p className={s.text}>
-            Команды <code className={s.code}>on/off</code> и отмена таймеров — модераторам. <code className={s.code}>!baka status</code> — у всех. Кто может
+            Команды <code className={s.code}>on/off</code> и отмена таймеров — могут использовать только модераторы. <code className={s.code}>!baka status</code> — у всех. Кто может
             вызывать <code className={s.code}>!timer</code> в чате, задаётся одной настройкой на канале в панели;
             имя таймера зрители указывают сами.
           </p>

@@ -36,7 +36,7 @@ function formatCountdown(ms: number): string {
 const TIMER_ERROR_LABELS: Record<string, string> = {
   timer_already_active: "Таймер с таким именем уже запущен.",
   timers_limit_reached: "Достигнут лимит активных таймеров на канале (15).",
-  invalid_timer_name: "Некорректное имя таймера (2–32 символа: латиница, цифры, _).",
+  invalid_timer_name: "Некорректное имя таймера (2–32 символа: латиница, кириллица, цифры, _).",
   invalid_minutes: "Укажите длительность от 2 до 240 минут.",
   started_by_required: "Не удалось определить пользователя.",
 };
@@ -211,7 +211,8 @@ export function TimersPanel({ channelId, subscribed }: Props) {
       <p className={s.lead}>
         В чате: <code className={s.code}>!timer &lt;мин&gt; [имя]</code> — имя задаёт зритель (без имени
         используется его ник). <code className={s.code}>!baka timer</code> — то же. Отмена:{" "}
-        <code className={s.code}>!timer clear [имя]</code> (модераторы).
+        <code className={s.code}>!timer clear [имя] - удаляет конкретный таймер</code> (модераторы).
+        <code className={s.code}>!timer clear и !baka timer clear - удаляет все таймеры</code> (модераторы).
       </p>
 
       <h3 className={s.sectionTitle}>Кто может вызывать !timer в чате</h3>
