@@ -107,8 +107,7 @@ export function ChannelAiModelPanel({ channelId, subscribed }: Props) {
     <section className={s.panel} aria-label="AI-модель">
       <h2 className={s.title}>AI-модель</h2>
       <p className={s.lead}>
-        Модель для этого канала: ответы через <strong>@TsundereChanAI</strong>, <strong>!baka</strong> и AI-модерация.
-        Изменение применяется без перезапуска бота.
+        Модель для этого канала: ответы через <strong>@TsundereChanAI</strong>, <strong>!baka</strong>
         {data.isDefault ? " Сейчас используется модель по умолчанию." : null}
       </p>
       <select
@@ -130,8 +129,7 @@ export function ChannelAiModelPanel({ channelId, subscribed }: Props) {
       ) : null}
       {providerUnavailable ? (
         <p className={s.warn} role="status">
-          Для этой модели на сервере бота не задан API-ключ провайдера. Выберите другую модель или добавьте ключ на
-          Railway.
+          Проблема с API-ключом провайдера. Выберите другую модель.
         </p>
       ) : null}
       <div className={s.metaRow}>
