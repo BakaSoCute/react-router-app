@@ -10,6 +10,7 @@ import {
 } from "~/api/api";
 import { BotStatusPanel } from "./BotStatusPanel";
 import { ChannelAiPromptPanel } from "./ChannelAiPromptPanel";
+import { ChannelAiModelPanel } from "./ChannelAiModelPanel";
 import { ChatModulesPanel } from "./ChatModulesPanel";
 import { CustomCommandsPanel } from "./CustomCommandsPanel";
 import { TimersPanel } from "./TimersPanel";
@@ -183,6 +184,11 @@ export default function AddUser() {
       />
 
       <ChannelAiPromptPanel
+        channelId={selectedChannelId || user.id}
+        subscribed={Boolean(botStatus?.subscribed)}
+      />
+
+      <ChannelAiModelPanel
         channelId={selectedChannelId || user.id}
         subscribed={Boolean(botStatus?.subscribed)}
       />

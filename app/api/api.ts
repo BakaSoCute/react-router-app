@@ -113,6 +113,23 @@ export type ChannelAiPromptResponse = {
     prompt: string
 }
 
+export type AiModelCatalogItem = {
+    provider: "deepseek" | "openai" | string
+    model: string
+    label: string
+    description?: string
+    enabled: boolean
+}
+
+export type ChannelAiModelResponse = {
+    success: boolean
+    channelId: string
+    provider: string
+    model: string
+    isDefault?: boolean
+    availableModels: AiModelCatalogItem[]
+}
+
 /** Согласовано с бот-сервером (`CHANNEL_AI_PROMPT_MAX_CHARS`) */
 export const CHANNEL_AI_PROMPT_MAX_CHARS = 4000
 
@@ -195,7 +212,7 @@ export const api = createApi({
         baseUrl: import.meta.env.VITE_BACKEND_URL,
         credentials: 'include'
     }),
-    tagTypes: ["User","Valid","Refresh","Auth","BotStatus","ChatModules","ChannelAiPrompt","CustomCommands","Timers","ChannelEligibility","Admin"],
+    tagTypes: ["User","Valid","Refresh","Auth","BotStatus","ChatModules","ChannelAiPrompt","ChannelAiModel","CustomCommands","Timers","ChannelEligibility","Admin"],
     endpoints: (builder) => ({
         getUser: builder.query<User, void>({
             query: () => '/api/auth/twitch/user',
@@ -231,7 +248,7 @@ export const api = createApi({
                 method: "POST",
                 body: body ?? {},
             }),
-            invalidatesTags: ["BotStatus", "ChatModules", "ChannelAiPrompt", "CustomCommands", "Timers"],
+            invalidatesTags: ["BotStatus", "ChatModules", "ChannelAiPrompt", "ChannelAiModel", "CustomCommands", "Timers"],
         }),
         removeBotFromChannel: builder.mutation<RemoveBotResponse, { channelId?: string } | void>({
             query: (body) => ({
@@ -239,7 +256,7 @@ export const api = createApi({
                 method: "POST",
                 body: body ?? {},
             }),
-            invalidatesTags: ["BotStatus", "ChatModules", "ChannelAiPrompt", "CustomCommands", "Timers"],
+            invalidatesTags: ["BotStatus", "ChatModules", "ChannelAiPrompt", "ChannelAiModel", "CustomCommands", "Timers"],
         }),
         getBotChannelStatus: builder.query<BotChannelStatus, string>({
             query: (channelId) => ({
@@ -299,6 +316,25 @@ export const api = createApi({
                 body,
             }),
             invalidatesTags: (_result, _err, arg) => [{ type: "ChannelAiPrompt", id: arg.channelId }],
+        }),
+        getChannelAiModel: builder.query<ChannelAiModelResponse, string>({
+            query: (channelId) => ({
+                url: "/api/auth/railway/channel-ai-model",
+                params: { channelId },
+            }),
+            providesTags: (result) =>
+                result?.channelId ? [{ type: "ChannelAiModel", id: result.channelId }] : [],
+        }),
+        patchChannelAiModel: builder.mutation<
+            ChannelAiModelResponse,
+            { channelId: string; provider: string; model: string }
+        >({
+            query: (body) => ({
+                url: "/api/auth/railway/channel-ai-model",
+                method: "PATCH",
+                body,
+            }),
+            invalidatesTags: (_result, _err, arg) => [{ type: "ChannelAiModel", id: arg.channelId }],
         }),
         getCustomCommands: builder.query<CustomCommandsResponse, string>({
             query: (channelId) => ({
@@ -464,6 +500,8 @@ export const {
     usePatchChatModuleMutation,
     useGetChannelAiPromptQuery,
     usePatchChannelAiPromptMutation,
+    useGetChannelAiModelQuery,
+    usePatchChannelAiModelMutation,
     useGetCustomCommandsQuery,
     useCreateCustomCommandMutation,
     usePatchCustomCommandMutation,
