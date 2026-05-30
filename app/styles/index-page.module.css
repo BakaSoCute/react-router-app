@@ -3,7 +3,20 @@
   margin: 0 auto;
   padding: 2rem 1rem 2.75rem;
 }
-
+.commands {
+  margin-bottom: 1.25rem;
+  padding: 1.35rem 1.2rem;
+  border-radius: 0.9rem;
+  background:
+    radial-gradient(circle at 8% 12%, rgba(14, 161, 206, 0.35), transparent 55%),
+    radial-gradient(circle at 90% 22%, rgba(163, 7, 150, 0.3), transparent 48%),
+    rgba(84, 3, 99, 0.76);
+}
+.commandsTitle {
+  margin: 0 0 0.8rem;
+  color: #eff6ff;
+  font-size: 1.03rem;
+}
 .hero {
   margin-bottom: 1.25rem;
   padding: 1.35rem 1.2rem;
@@ -48,6 +61,11 @@
   gap: 1rem;
   grid-template-columns: 1fr;
 }
+.flex {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
 
 @media (min-width: 860px) {
   .grid {
@@ -72,6 +90,7 @@
 .list {
   margin: 0;
   padding-left: 1.1rem;
+  padding-bottom: 1.25rem;
   display: grid;
   gap: 0.5rem;
   color: #eef2ff;
