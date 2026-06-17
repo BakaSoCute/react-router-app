@@ -14,6 +14,7 @@ import { ChannelAiModelPanel } from "./ChannelAiModelPanel";
 import { ChatModulesPanel } from "./ChatModulesPanel";
 import { CustomCommandsPanel } from "./CustomCommandsPanel";
 import { TimersPanel } from "./TimersPanel";
+import { ClipsPanel } from "./ClipsPanel";
 import s from "./addUser.module.css";
 
 function pickErrorMessage(error: unknown): string {
@@ -199,6 +200,11 @@ export default function AddUser() {
       />
 
       <TimersPanel
+        channelId={selectedChannelId || user.id}
+        subscribed={Boolean(botStatus?.subscribed)}
+      />
+
+      <ClipsPanel
         channelId={selectedChannelId || user.id}
         subscribed={Boolean(botStatus?.subscribed)}
       />

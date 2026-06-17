@@ -75,6 +75,13 @@ export type TimersResponse = {
     invokeUserLevel: CustomCommandUserLevel
 }
 
+export type ClipsSettingsResponse = {
+    success: boolean
+    channelId: string
+    invokeUserLevel: CustomCommandUserLevel
+    cooldownSeconds: number
+}
+
 export type ManagedChannel = {
     id: string
     login: string
@@ -212,7 +219,7 @@ export const api = createApi({
         baseUrl: import.meta.env.VITE_BACKEND_URL,
         credentials: 'include'
     }),
-    tagTypes: ["User","Valid","Refresh","Auth","BotStatus","ChatModules","ChannelAiPrompt","ChannelAiModel","CustomCommands","Timers","ChannelEligibility","Admin"],
+    tagTypes: ["User","Valid","Refresh","Auth","BotStatus","ChatModules","ChannelAiPrompt","ChannelAiModel","CustomCommands","Timers","ClipsSettings","ChannelEligibility","Admin"],
     endpoints: (builder) => ({
         getUser: builder.query<User, void>({
             query: () => '/api/auth/twitch/user',
@@ -442,6 +449,25 @@ export const api = createApi({
                 { type: "BotStatus", id: arg.channelId },
             ],
         }),
+        getClipsSettings: builder.query<ClipsSettingsResponse, string>({
+            query: (channelId) => ({
+                url: "/api/auth/railway/clips/settings",
+                params: { channelId },
+            }),
+            providesTags: (result) =>
+                result?.channelId ? [{ type: "ClipsSettings", id: result.channelId }] : [],
+        }),
+        patchClipsSettings: builder.mutation<
+            ClipsSettingsResponse,
+            { channelId: string; userLevel?: CustomCommandUserLevel; cooldownSeconds?: number }
+        >({
+            query: (body) => ({
+                url: "/api/auth/railway/clips/settings",
+                method: "PATCH",
+                body,
+            }),
+            invalidatesTags: (_result, _err, arg) => [{ type: "ClipsSettings", id: arg.channelId }],
+        }),
         getAdminMe: builder.query<AdminMeResponse, void>({
             query: () => "/api/auth/admin/me",
             providesTags: [{ type: "Admin", id: "me" }],
@@ -510,6 +536,8 @@ export const {
     usePatchTimerPermissionMutation,
     useStartChannelTimerMutation,
     useCancelChannelTimerMutation,
+    useGetClipsSettingsQuery,
+    usePatchClipsSettingsMutation,
     useGetAdminMeQuery,
     useGetAdminChannelsQuery,
     useAdminDisconnectChannelMutation,
