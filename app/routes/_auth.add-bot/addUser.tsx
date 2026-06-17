@@ -8,6 +8,15 @@ import {
   useRemoveBotFromChannelMutation,
   type ChannelEligibilityResponse,
 } from "~/api/api";
+import { DashboardLayout } from "~/components/dashboard/DashboardLayout";
+import {
+  IconBrain,
+  IconClip,
+  IconCommand,
+  IconModule,
+  IconPlug,
+  IconTimer,
+} from "~/components/icons";
 import { BotStatusPanel } from "./BotStatusPanel";
 import { ChannelAiPromptPanel } from "./ChannelAiPromptPanel";
 import { ChannelAiModelPanel } from "./ChannelAiModelPanel";
@@ -16,6 +25,18 @@ import { CustomCommandsPanel } from "./CustomCommandsPanel";
 import { TimersPanel } from "./TimersPanel";
 import { ClipsPanel } from "./ClipsPanel";
 import s from "./addUser.module.css";
+
+type SectionId = "overview" | "modules" | "ai-prompt" | "ai-model" | "commands" | "timers" | "clips";
+
+const NAV = [
+  { id: "overview" as const, label: "Обзор", icon: <IconPlug size={16} /> },
+  { id: "modules" as const, label: "Модули", icon: <IconModule size={16} /> },
+  { id: "ai-prompt" as const, label: "AI-промт", icon: <IconBrain size={16} /> },
+  { id: "ai-model" as const, label: "AI-модель", icon: <IconBrain size={16} /> },
+  { id: "commands" as const, label: "Команды", icon: <IconCommand size={16} /> },
+  { id: "timers" as const, label: "Таймеры", icon: <IconTimer size={16} /> },
+  { id: "clips" as const, label: "Клипы", icon: <IconClip size={16} /> },
+];
 
 function pickErrorMessage(error: unknown): string {
   if (error && typeof error === "object" && "data" in error) {
@@ -58,6 +79,7 @@ export default function AddUser() {
   const [addBot, addState] = useAddBotToChannelMutation();
   const [removeBot, removeState] = useRemoveBotFromChannelMutation();
   const [selectedChannelId, setSelectedChannelId] = useState("");
+  const [activeSection, setActiveSection] = useState<SectionId>("overview");
 
   const selectedChannel = useMemo(
     () => managedChannels.find((ch) => ch.id === selectedChannelId),
@@ -77,6 +99,7 @@ export default function AddUser() {
   });
 
   const waitingFirstStatus = botStatusLoading && !botStatus;
+  const subscribed = Boolean(botStatus?.subscribed);
 
   const needsEligibilityCheck =
     canManageBotConnection && Boolean(selectedChannelId) && botStatus?.subscribed !== true;
@@ -129,229 +152,225 @@ export default function AddUser() {
 
   if (userLoading || !user?.id) {
     return (
-      <div className={s.wrap}>
-        <p className={s.lead}>Загрузка профиля…</p>
+      <div className={s.loadingWrap}>
+        <p className={s.loadingText}>Загрузка профиля…</p>
       </div>
     );
   }
 
-  return (
-    <div className={s.wrap}>
-      <h1 className={s.title}>Бот на вашем канале</h1>
-      <p className={s.lead}>
-        Вы вошли как <strong>{user.display_name}</strong> (@{user.login}). На данной странице вы можете управлять ботом на вашем канале и на каналах, где вы модератор.
-      </p>
-
-      <div className={s.card}>
-        <h2 className={s.cardTitle}>Выбор канала</h2>
-        <label className={s.fieldLabel} htmlFor="channelId">
-          Управляемый канал
-        </label>
-        <select
-          id="channelId"
-          className={s.select}
-          value={selectedChannelId}
-          onChange={(e) => setSelectedChannelId(e.target.value)}
-          disabled={channelsLoading || managedChannels.length === 0}
-        >
-          {managedChannels.length === 0 ? (
-            <option value={user.id}>
-              {channelsLoading ? "Загрузка каналов..." : `${user.display_name} (ваш канал)`}
+  const channelSelect = (
+    <>
+      <label className={s.fieldLabel} htmlFor="channelId">
+        Канал
+      </label>
+      <select
+        id="channelId"
+        className={s.select}
+        value={selectedChannelId}
+        onChange={(e) => setSelectedChannelId(e.target.value)}
+        disabled={channelsLoading || managedChannels.length === 0}
+      >
+        {managedChannels.length === 0 ? (
+          <option value={user.id}>
+            {channelsLoading ? "Загрузка…" : `${user.display_name} (ваш)`}
+          </option>
+        ) : (
+          managedChannels.map((ch) => (
+            <option key={ch.id} value={ch.id}>
+              {ch.name || ch.login || ch.id}
+              {ch.source === "self"
+                ? " (ваш)"
+                : ch.moderatorRole === "lead_moderator"
+                  ? " (вед. мод.)"
+                  : " (мод.)"}
             </option>
-          ) : (
-            managedChannels.map((ch) => (
-              <option key={ch.id} value={ch.id}>
-                {ch.name || ch.login || ch.id}
-                {ch.source === "self"
-                  ? " (ваш канал)"
-                  : ch.moderatorRole === "lead_moderator"
-                    ? " (ведущий модератор)"
-                    : " (модератор)"}
-              </option>
-            ))
-          )}
-        </select>
+          ))
+        )}
+      </select>
+    </>
+  );
+
+  const connectionCard = (
+    <div className={s.card}>
+      <h2 className={s.cardTitle}>Подключение</h2>
+      {selectedChannel ? (
         <p className={s.hint}>
-          Статус бота доступен на вашем канале и на каналах, где вы модератор. Подключение и отключение — только для
-          вашего канала.
+          Канал: <strong>{selectedChannel.name || selectedChannel.login || selectedChannel.id}</strong>{" "}
+          (<code className={s.code}>{selectedChannel.id}</code>)
         </p>
-      </div>
+      ) : (
+        <p className={s.hint}>
+          Канал: <code className={s.code}>{selectedChannelId || user.id}</code>
+        </p>
+      )}
+      {canManageBotConnection ? (
+        <>
+          {needsEligibilityCheck && (
+            <div
+              className={`${s.eligibilityBox} ${
+                eligibilityLoading ? "" : eligibility?.eligible ? s.eligibilityOk : s.eligibilityFail
+              }`}
+              role="status"
+            >
+              {eligibilityLoading ? (
+                <p className={s.eligibilityTitle}>Проверка канала…</p>
+              ) : eligibilityError || !eligibility?.success ? (
+                <>
+                  <p className={s.eligibilityTitle}>Не удалось проверить канал</p>
+                  <p className={s.eligibilityMeta}>Повторите позже.</p>
+                </>
+              ) : eligibility.eligible ? (
+                <>
+                  <p className={s.eligibilityTitle}>Канал подходит</p>
+                  <p className={s.eligibilityMeta}>
+                    {eligibility.login ? `@${eligibility.login}` : eligibility.broadcasterId} ·{" "}
+                    {broadcasterTypeLabel(eligibility.broadcasterType)}
+                    {eligibility.followerTotal !== null ? ` · ${eligibility.followerTotal} фол.` : null}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className={s.eligibilityTitle}>Канал пока не подходит</p>
+                  <p className={s.eligibilityMeta}>
+                    Нужен Affiliate, Partner или ≥ {eligibility.minFollowers} фол.
+                    {eligibility.followerTotal !== null
+                      ? ` Сейчас: ${eligibility.followerTotal}, ${broadcasterTypeLabel(eligibility.broadcasterType)}.`
+                      : null}
+                  </p>
+                  {eligibility.failureReasons.length > 0 && (
+                    <ul className={s.eligibilityList}>
+                      {eligibility.failureReasons.map((reason) => (
+                        <li key={reason}>{reason}</li>
+                      ))}
+                    </ul>
+                  )}
+                </>
+              )}
+            </div>
+          )}
 
-      <BotStatusPanel channelId={selectedChannelId || user.id} />
-
-      <ChatModulesPanel
-        channelId={selectedChannelId || user.id}
-        subscribed={Boolean(botStatus?.subscribed)}
-      />
-
-      <ChannelAiPromptPanel
-        channelId={selectedChannelId || user.id}
-        subscribed={Boolean(botStatus?.subscribed)}
-      />
-
-      <ChannelAiModelPanel
-        channelId={selectedChannelId || user.id}
-        subscribed={Boolean(botStatus?.subscribed)}
-      />
-
-      <CustomCommandsPanel
-        channelId={selectedChannelId || user.id}
-        subscribed={Boolean(botStatus?.subscribed)}
-      />
-
-      <TimersPanel
-        channelId={selectedChannelId || user.id}
-        subscribed={Boolean(botStatus?.subscribed)}
-      />
-
-      <ClipsPanel
-        channelId={selectedChannelId || user.id}
-        subscribed={Boolean(botStatus?.subscribed)}
-      />
-
-      <div className={s.card}>
-        <h2 className={s.cardTitle}>Подключение</h2>
-        {selectedChannel ? (
-          <p className={s.hint}>
-            Текущий канал: <strong>{selectedChannel.name || selectedChannel.login || selectedChannel.id}</strong>{" "}
-            (<code className={s.code}>{selectedChannel.id}</code>)
-          </p>
-        ) : (
-          <p className={s.hint}>
-            Текущий канал: <code className={s.code}>{selectedChannelId || user.id}</code>
-          </p>
-        )}
-        {canManageBotConnection ? (
-          <>
-            {needsEligibilityCheck && (
-              <div
-                className={`${s.eligibilityBox} ${
-                  eligibilityLoading ? "" : eligibility?.eligible ? s.eligibilityOk : s.eligibilityFail
-                }`}
-                role="status"
-              >
-                {eligibilityLoading ? (
-                  <p className={s.eligibilityTitle}>Проверка канала для подключения бота…</p>
-                ) : eligibilityError || !eligibility?.success ? (
-                  <>
-                    <p className={s.eligibilityTitle}>Не удалось проверить канал</p>
-                    <p className={s.eligibilityMeta}>Повторите позже. Подключение временно недоступно.</p>
-                  </>
-                ) : eligibility.eligible ? (
-                  <>
-                    <p className={s.eligibilityTitle}>Канал подходит для подключения бота</p>
-                    <p className={s.eligibilityMeta}>
-                      {eligibility.login ? `@${eligibility.login}` : eligibility.broadcasterId} · статус Twitch:{" "}
-                      {broadcasterTypeLabel(eligibility.broadcasterType)}
-                      {eligibility.followerTotal !== null ? ` · фоловеров: ${eligibility.followerTotal}` : null}
-                    </p>
-                  </>
+          {waitingFirstStatus ? (
+            <p className={s.hint}>Проверка статуса…</p>
+          ) : (
+            <div className={s.actions}>
+              {botStatus != null ? (
+                botStatus.subscribed ? (
+                  <button
+                    type="button"
+                    className={s.buttonDanger}
+                    disabled={addState.isLoading || removeState.isLoading || !selectedChannelId}
+                    onClick={() => void handleRemove()}
+                  >
+                    {removeState.isLoading ? "Отключение…" : "Отключить бота"}
+                  </button>
                 ) : (
-                  <>
-                    <p className={s.eligibilityTitle}>Канал пока не подходит для подключения бота</p>
-                    <p className={s.eligibilityMeta}>
-                      Нужно одно из условий: Twitch Affiliate, Partner или не менее {eligibility.minFollowers} фоловеров.
-                      {eligibility.followerTotal !== null
-                        ? ` Сейчас: ${eligibility.followerTotal} фоловеров, статус: ${broadcasterTypeLabel(eligibility.broadcasterType)}.`
-                        : null}
-                    </p>
-                    {eligibility.failureReasons.length > 0 && (
-                      <ul className={s.eligibilityList}>
-                        {eligibility.failureReasons.map((reason) => (
-                          <li key={reason}>{reason}</li>
-                        ))}
-                      </ul>
-                    )}
-                  </>
-                )}
-              </div>
-            )}
+                  <button
+                    type="button"
+                    className={s.buttonPrimary}
+                    disabled={
+                      addState.isLoading ||
+                      removeState.isLoading ||
+                      !selectedChannelId ||
+                      !canConnectBot
+                    }
+                    onClick={() => void handleAdd()}
+                  >
+                    {addState.isLoading ? "Подключение…" : "Подключить бота"}
+                  </button>
+                )
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className={s.buttonPrimary}
+                    disabled={
+                      addState.isLoading ||
+                      removeState.isLoading ||
+                      !selectedChannelId ||
+                      !canConnectBot
+                    }
+                    onClick={() => void handleAdd()}
+                  >
+                    {addState.isLoading ? "Подключение…" : "Подключить бота"}
+                  </button>
+                  <button
+                    type="button"
+                    className={s.buttonDanger}
+                    disabled={addState.isLoading || removeState.isLoading || !selectedChannelId}
+                    onClick={() => void handleRemove()}
+                  >
+                    {removeState.isLoading ? "Отключение…" : "Отключить бота"}
+                  </button>
+                </>
+              )}
+            </div>
+          )}
 
-            {waitingFirstStatus ? (
-              <p className={s.hint}>Проверка статуса подключения…</p>
-            ) : (
-              <div className={s.actions}>
-                {botStatus != null ? (
-                  botStatus.subscribed ? (
-                    <button
-                      type="button"
-                      className={s.buttonDanger}
-                      disabled={addState.isLoading || removeState.isLoading || !selectedChannelId}
-                      onClick={() => void handleRemove()}
-                    >
-                      {removeState.isLoading ? "Отключение…" : "Отключить бота и снять модератора"}
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className={s.buttonPrimary}
-                      disabled={
-                        addState.isLoading ||
-                        removeState.isLoading ||
-                        !selectedChannelId ||
-                        !canConnectBot
-                      }
-                      onClick={() => void handleAdd()}
-                    >
-                      {addState.isLoading ? "Подключение…" : "Подключить бота и выдать модератора"}
-                    </button>
-                  )
-                ) : (
-                  <>
-                    <button
-                      type="button"
-                      className={s.buttonPrimary}
-                      disabled={
-                        addState.isLoading ||
-                        removeState.isLoading ||
-                        !selectedChannelId ||
-                        !canConnectBot
-                      }
-                      onClick={() => void handleAdd()}
-                    >
-                      {addState.isLoading ? "Подключение…" : "Подключить бота и выдать модератора"}
-                    </button>
-                    <button
-                      type="button"
-                      className={s.buttonDanger}
-                      disabled={addState.isLoading || removeState.isLoading || !selectedChannelId}
-                      onClick={() => void handleRemove()}
-                    >
-                      {removeState.isLoading ? "Отключение…" : "Отключить бота и снять модератора"}
-                    </button>
-                  </>
-                )}
-              </div>
-            )}
-
-            {addState.isSuccess && addState.data?.success && (
-              <p className={s.ok} role="status">
-                {addState.data.message ?? "Бот подписан на канал и добавлен в модераторы."}
-              </p>
-            )}
-            {removeState.isSuccess && removeState.data?.success && (
-              <p className={s.ok} role="status">
-                {removeState.data.message ?? "Бот отписан от канала, роль модератора снята."}
-              </p>
-            )}
-            {addErr && (
-              <p className={s.err} role="alert">
-                {addErr}
-              </p>
-            )}
-            {removeErr && (
-              <p className={s.err} role="alert">
-                {removeErr}
-              </p>
-            )}
-          </>
-        ) : (
-          <p className={s.hint}>
-            На этом канале подключать и отключать бота может только владелец. Модераторы
-            могут смотреть статус выше, но не менять подписку бота.
-          </p>
-        )}
-      </div>
+          {addState.isSuccess && addState.data?.success && (
+            <p className={s.ok} role="status">
+              {addState.data.message ?? "Бот подключён."}
+            </p>
+          )}
+          {removeState.isSuccess && removeState.data?.success && (
+            <p className={s.ok} role="status">
+              {removeState.data.message ?? "Бот отключён."}
+            </p>
+          )}
+          {addErr && (
+            <p className={s.err} role="alert">
+              {addErr}
+            </p>
+          )}
+          {removeErr && (
+            <p className={s.err} role="alert">
+              {removeErr}
+            </p>
+          )}
+        </>
+      ) : (
+        <p className={s.hint}>
+          Подключать бота может только владелец канала. Модераторы могут просматривать настройки.
+        </p>
+      )}
     </div>
+  );
+
+  const renderSection = () => {
+    const channelId = selectedChannelId || user.id;
+
+    switch (activeSection) {
+      case "overview":
+        return (
+          <div className={s.sectionStack}>
+            <BotStatusPanel channelId={channelId} />
+            {connectionCard}
+          </div>
+        );
+      case "modules":
+        return <ChatModulesPanel channelId={channelId} subscribed={subscribed} />;
+      case "ai-prompt":
+        return <ChannelAiPromptPanel channelId={channelId} subscribed={subscribed} />;
+      case "ai-model":
+        return <ChannelAiModelPanel channelId={channelId} subscribed={subscribed} />;
+      case "commands":
+        return <CustomCommandsPanel channelId={channelId} subscribed={subscribed} />;
+      case "timers":
+        return <TimersPanel channelId={channelId} subscribed={subscribed} />;
+      case "clips":
+        return <ClipsPanel channelId={channelId} subscribed={subscribed} />;
+    }
+  };
+
+  return (
+    <DashboardLayout
+      title="Панель бота"
+      subtitle={`@${user.login}`}
+      nav={NAV}
+      activeId={activeSection}
+      onNavigate={(id) => setActiveSection(id as SectionId)}
+      sidebarExtra={channelSelect}
+    >
+      {renderSection()}
+    </DashboardLayout>
   );
 }

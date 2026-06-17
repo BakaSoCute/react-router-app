@@ -1,21 +1,19 @@
-.container {
-  position: fixed;
-  inset: 0;
-  z-index: 200;
+.loading {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  background: rgba(7, 4, 20, 0.75);
-  backdrop-filter: blur(6px);
+  justify-content: center;
+  gap: 1rem;
+  min-height: calc(100vh - var(--nav-height));
+  color: var(--text-muted);
 }
 
 .spinner {
-  width: 3.5rem;
-  height: 3.5rem;
+  width: 2.5rem;
+  height: 2.5rem;
   border: 3px solid rgba(255, 110, 199, 0.2);
   border-top-color: var(--neon-pink);
   border-right-color: var(--neon-cyan);
   border-radius: 50%;
   animation: spin-neon 0.8s linear infinite;
-  box-shadow: var(--shadow-neon);
 }

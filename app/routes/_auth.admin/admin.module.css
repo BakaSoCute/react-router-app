@@ -2,37 +2,30 @@
   max-width: 56rem;
   margin: 0 auto;
   padding: 1.5rem 1rem 2.5rem;
+  position: relative;
+  z-index: 1;
 }
 
 .title {
   margin: 0 0 0.5rem;
   font-size: 1.65rem;
-  font-weight: 700;
-  color: #ffffff;
+  font-weight: 800;
+  color: var(--text-primary);
 }
 
 .lead {
   margin: 0 0 1.25rem;
   font-size: 0.92rem;
   line-height: 1.55;
-  color: rgba(224, 231, 255, 0.88);
-}
-
-.note {
-  margin: 0 0 1rem;
-  padding: 0.65rem 0.85rem;
-  border-radius: 0.5rem;
-  background: rgba(15, 23, 42, 0.55);
-  border: 1px solid rgba(196, 181, 253, 0.28);
-  font-size: 0.84rem;
-  color: rgba(224, 231, 255, 0.82);
+  color: var(--text-muted);
 }
 
 .tableWrap {
   overflow-x: auto;
-  border-radius: 0.75rem;
-  border: 1px solid rgba(167, 139, 250, 0.32);
-  background: rgba(24, 12, 66, 0.74);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-soft);
+  background: var(--gradient-card);
+  box-shadow: var(--shadow-card);
 }
 
 .table {
@@ -43,25 +36,26 @@
 
 .table th,
 .table td {
-  padding: 0.55rem 0.65rem;
+  padding: 0.6rem 0.7rem;
   text-align: left;
-  border-bottom: 1px solid rgba(196, 181, 253, 0.18);
-  color: #eef2ff;
+  border-bottom: 1px solid var(--border-soft);
+  color: var(--text-secondary);
 }
 
 .table th {
-  font-weight: 600;
-  color: #f8fafc;
-  background: rgba(15, 23, 42, 0.55);
+  font-weight: 700;
+  color: var(--text-primary);
+  background: var(--bg-row);
 }
 
 .badgeBanned {
-  color: #fecaca;
-  font-weight: 600;
+  color: var(--color-err);
+  font-weight: 700;
 }
 
 .badgeOk {
-  color: #bbf7d0;
+  color: var(--color-ok);
+  font-weight: 700;
 }
 
 .actions {
@@ -71,28 +65,36 @@
 }
 
 .btn {
-  padding: 0.3rem 0.55rem;
-  border-radius: 0.35rem;
-  border: 1px solid rgba(196, 181, 253, 0.45);
-  background: rgba(30, 27, 75, 0.85);
-  color: #eef2ff;
+  padding: 0.32rem 0.6rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-soft);
+  background: var(--bg-input);
+  color: var(--text-secondary);
   font-size: 0.76rem;
+  font-weight: 600;
   cursor: pointer;
+  transition: all var(--transition-fast);
 }
 
 .btn:disabled {
-  opacity: 0.55;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
+.btn:hover:not(:disabled) {
+  border-color: var(--border-neon);
+}
+
 .btnDanger {
-  border-color: rgba(248, 113, 113, 0.45);
-  background: rgba(127, 29, 29, 0.28);
+  border-color: var(--color-err-border);
+  background: var(--color-err-bg);
+  color: var(--color-err);
 }
 
 .btnWarn {
-  border-color: rgba(251, 191, 36, 0.45);
-  background: rgba(120, 53, 15, 0.35);
+  border-color: var(--color-warn-border);
+  background: var(--color-warn-bg);
+  color: var(--color-warn);
 }
 
 .loading,
@@ -102,36 +104,35 @@
 }
 
 .err {
-  color: #fecaca;
+  color: var(--color-err);
 }
 
 .muted {
-  color: rgba(224, 231, 255, 0.75);
+  color: var(--text-muted);
 }
 
 .code {
   padding: 0.1rem 0.3rem;
-  border-radius: 0.25rem;
-  background: rgba(2, 6, 23, 0.42);
+  border-radius: 0.3rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border-soft);
   font-size: 0.8rem;
-  color: #f9a8d4;
-}
-
-.banForm {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  align-items: center;
-  margin-top: 0.25rem;
+  color: var(--text-code);
+  font-family: var(--font-mono);
 }
 
 .banInput {
   min-width: 8rem;
   flex: 1;
-  padding: 0.28rem 0.45rem;
-  border-radius: 0.35rem;
-  border: 1px solid rgba(196, 181, 253, 0.35);
-  background: rgba(2, 6, 23, 0.55);
-  color: #f8fafc;
+  padding: 0.3rem 0.5rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-soft);
+  background: var(--bg-input);
+  color: var(--text-primary);
   font-size: 0.76rem;
+}
+
+.banInput:focus {
+  outline: none;
+  border-color: var(--neon-pink);
 }

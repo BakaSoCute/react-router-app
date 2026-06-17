@@ -1,0 +1,57 @@
+.wrap {
+  position: relative;
+  display: inline-flex;
+  animation: float 4s ease-in-out infinite;
+}
+
+.sm .svg {
+  width: 120px;
+  height: 144px;
+}
+
+.md .svg {
+  width: 180px;
+  height: 216px;
+}
+
+.lg .svg {
+  width: 220px;
+  height: 264px;
+}
+
+.svg {
+  filter: drop-shadow(0 0 16px rgba(255, 110, 199, 0.45));
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+.sparkle1,
+.sparkle2,
+.sparkle3 {
+  position: absolute;
+  font-size: 1rem;
+  color: var(--neon-cyan);
+  text-shadow: 0 0 8px var(--neon-cyan-glow);
+  pointer-events: none;
+  animation: twinkle 2s ease-in-out infinite alternate;
+}
+
+.sparkle1 {
+  top: 5%;
+  right: 0;
+  animation-delay: 0s;
+}
+
+.sparkle2 {
+  top: 40%;
+  left: -8%;
+  color: var(--neon-pink);
+  text-shadow: 0 0 8px var(--neon-pink-glow);
+  animation-delay: 0.7s;
+}
+
+.sparkle3 {
+  bottom: 15%;
+  right: -5%;
+  font-size: 0.75rem;
+  animation-delay: 1.2s;
+}

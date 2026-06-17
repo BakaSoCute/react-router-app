@@ -1,17 +1,16 @@
 import { Link } from "react-router";
+import { Mascot } from "~/components/Mascot";
+import s from "~/styles/not-found.module.css";
 
 export default function pageNotFound() {
   return (
-    <main
-      style={{
-        maxWidth: "40rem",
-        margin: "0 auto",
-        padding: "2rem 1rem",
-      }}
-    >
-      <h1>Страница не найдена</h1>
-      <p>Проверьте адрес или вернитесь на главную.</p>
-      <Link to="/">Вернуться на главную</Link>
+    <main className={s.wrap}>
+      {/* <Mascot size="sm" /> */}
+      <h1 className={s.title}>404 — страница не найдена</h1>
+      <p className={s.text}>Проверьте адрес или вернитесь на главную.</p>
+      <Link to="/" className={s.link}>
+        На главную
+      </Link>
     </main>
   );
 }
