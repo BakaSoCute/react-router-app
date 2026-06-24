@@ -18,10 +18,8 @@ import {
   IconTimer,
 } from "~/components/icons";
 import s from "./addUser.module.css";
+import { BotStatusPanel } from "./BotStatusPanel";
 
-const BotStatusPanel = lazy(() =>
-  import("./BotStatusPanel").then((m) => ({ default: m.BotStatusPanel }))
-);
 const ChatModulesPanel = lazy(() =>
   import("./ChatModulesPanel").then((m) => ({ default: m.ChatModulesPanel }))
 );
@@ -100,7 +98,9 @@ export default function AddUser() {
   const [removeBot, removeState] = useRemoveBotFromChannelMutation();
   const [selectedChannelId, setSelectedChannelId] = useState("");
   const [activeSection, setActiveSection] = useState<SectionId>("overview");
-  const [activatedSections, setActivatedSections] = useState<Set<SectionId>>(() => new Set());
+  const [activatedSections, setActivatedSections] = useState<Set<SectionId>>(
+    () => new Set(["overview"])
+  );
 
   const handleNavigate = useCallback((id: string) => {
     const sectionId = id as SectionId;
@@ -112,10 +112,6 @@ export default function AddUser() {
       return next;
     });
   }, []);
-
-  if (!user?.id) {
-    return null;
-  }
 
   const selectedChannel = useMemo(
     () => managedChannels.find((ch) => ch.id === selectedChannelId),
@@ -371,9 +367,7 @@ export default function AddUser() {
       case "overview":
         return (
           <div className={s.sectionStack}>
-            {isActivated
-              ? renderLazyPanel(<BotStatusPanel channelId={channelId} />)
-              : null}
+            <BotStatusPanel channelId={channelId} />
             {connectionCard}
           </div>
         );
@@ -413,7 +407,7 @@ export default function AddUser() {
       onNavigate={handleNavigate}
       sidebarExtra={channelSelect}
     >
-      {renderSection()}
+      {user?.id ? renderSection() : null}
     </DashboardLayout>
   );
 }
