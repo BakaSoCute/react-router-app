@@ -43,6 +43,7 @@ export const useAuth = () => {
 
   const isLoading =
     isValidLoading || (shouldFetchUser && isUserLoading && !currentUser?.id)
+  const isBootstrapping = isLoading
   const isError = isValidError || (shouldFetchUser && isUserError)
 
   return {
@@ -51,6 +52,7 @@ export const useAuth = () => {
     isValid,
     isLogin,
     isLoading,
+    isBootstrapping,
     isError,
 
     // Данные пользователя

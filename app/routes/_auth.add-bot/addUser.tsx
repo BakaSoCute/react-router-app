@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   useAddBotToChannelMutation,
   useGetBotChannelStatusQuery,
@@ -41,8 +41,8 @@ const ClipsPanel = lazy(() =>
   import("./ClipsPanel").then((m) => ({ default: m.ClipsPanel }))
 );
 
-function PanelFallback() {
-  return <p className={s.loadingText}>Загрузка…</p>;
+function renderLazyPanel(panel: ReactNode) {
+  return <Suspense fallback={null}>{panel}</Suspense>;
 }
 
 type SectionId = "overview" | "modules" | "ai-prompt" | "ai-model" | "commands" | "timers" | "clips";
@@ -90,14 +90,32 @@ function broadcasterTypeLabel(t: ChannelEligibilityResponse["broadcasterType"]):
 }
 
 export default function AddUser() {
-  const { user, isLoading: userLoading } = useAuth();
-  const { data: managedPayload, isLoading: channelsLoading } = useGetManagedChannelsQuery();
+  const { user } = useAuth();
+  const { data: managedPayload, isLoading: channelsLoading } = useGetManagedChannelsQuery(undefined, {
+    skip: !user?.id,
+  });
   const managedChannels = managedPayload?.channels ?? [];
 
   const [addBot, addState] = useAddBotToChannelMutation();
   const [removeBot, removeState] = useRemoveBotFromChannelMutation();
   const [selectedChannelId, setSelectedChannelId] = useState("");
   const [activeSection, setActiveSection] = useState<SectionId>("overview");
+  const [activatedSections, setActivatedSections] = useState<Set<SectionId>>(() => new Set());
+
+  const handleNavigate = useCallback((id: string) => {
+    const sectionId = id as SectionId;
+    setActiveSection(sectionId);
+    setActivatedSections((prev) => {
+      if (prev.has(sectionId)) return prev;
+      const next = new Set(prev);
+      next.add(sectionId);
+      return next;
+    });
+  }, []);
+
+  if (!user?.id) {
+    return null;
+  }
 
   const selectedChannel = useMemo(
     () => managedChannels.find((ch) => ch.id === selectedChannelId),
@@ -167,14 +185,6 @@ export default function AddUser() {
     addState.isError && !addState.isSuccess ? pickErrorMessage(addState.error) : null;
   const removeErr =
     removeState.isError && !removeState.isSuccess ? pickErrorMessage(removeState.error) : null;
-
-  if (userLoading || !user?.id) {
-    return (
-      <div className={s.loadingWrap}>
-        <p className={s.loadingText}>Загрузка профиля…</p>
-      </div>
-    );
-  }
 
   const channelSelect = (
     <>
@@ -355,53 +365,42 @@ export default function AddUser() {
 
   const renderSection = () => {
     const channelId = selectedChannelId || user.id;
+    const isActivated = activatedSections.has(activeSection);
 
     switch (activeSection) {
       case "overview":
         return (
           <div className={s.sectionStack}>
-            <Suspense fallback={<PanelFallback />}>
-              <BotStatusPanel channelId={channelId} />
-            </Suspense>
+            {isActivated
+              ? renderLazyPanel(<BotStatusPanel channelId={channelId} />)
+              : null}
             {connectionCard}
           </div>
         );
       case "modules":
-        return (
-          <Suspense fallback={<PanelFallback />}>
-            <ChatModulesPanel channelId={channelId} subscribed={subscribed} />
-          </Suspense>
-        );
+        return isActivated
+          ? renderLazyPanel(<ChatModulesPanel channelId={channelId} subscribed={subscribed} />)
+          : null;
       case "ai-prompt":
-        return (
-          <Suspense fallback={<PanelFallback />}>
-            <ChannelAiPromptPanel channelId={channelId} subscribed={subscribed} />
-          </Suspense>
-        );
+        return isActivated
+          ? renderLazyPanel(<ChannelAiPromptPanel channelId={channelId} subscribed={subscribed} />)
+          : null;
       case "ai-model":
-        return (
-          <Suspense fallback={<PanelFallback />}>
-            <ChannelAiModelPanel channelId={channelId} subscribed={subscribed} />
-          </Suspense>
-        );
+        return isActivated
+          ? renderLazyPanel(<ChannelAiModelPanel channelId={channelId} subscribed={subscribed} />)
+          : null;
       case "commands":
-        return (
-          <Suspense fallback={<PanelFallback />}>
-            <CustomCommandsPanel channelId={channelId} subscribed={subscribed} />
-          </Suspense>
-        );
+        return isActivated
+          ? renderLazyPanel(<CustomCommandsPanel channelId={channelId} subscribed={subscribed} />)
+          : null;
       case "timers":
-        return (
-          <Suspense fallback={<PanelFallback />}>
-            <TimersPanel channelId={channelId} subscribed={subscribed} />
-          </Suspense>
-        );
+        return isActivated
+          ? renderLazyPanel(<TimersPanel channelId={channelId} subscribed={subscribed} />)
+          : null;
       case "clips":
-        return (
-          <Suspense fallback={<PanelFallback />}>
-            <ClipsPanel channelId={channelId} subscribed={subscribed} />
-          </Suspense>
-        );
+        return isActivated
+          ? renderLazyPanel(<ClipsPanel channelId={channelId} subscribed={subscribed} />)
+          : null;
     }
   };
 
@@ -411,7 +410,7 @@ export default function AddUser() {
       subtitle={`@${user.login}`}
       nav={NAV}
       activeId={activeSection}
-      onNavigate={(id) => setActiveSection(id as SectionId)}
+      onNavigate={handleNavigate}
       sidebarExtra={channelSelect}
     >
       {renderSection()}

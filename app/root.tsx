@@ -6,6 +6,7 @@ import { store } from "./store/store";
 import { GlobalSpiner } from "./features/globalSpiner";
 import { Navigation } from "./Navigate";
 import { useAuth } from "./hooks/useAuth";
+import { AppLoader } from "./components/AppLoader";
 import { HydrateFallback } from "./components/HydrateFallback";
 
 export { Layout } from "./Layout";
@@ -22,8 +23,11 @@ export default function Root() {
 function App() {
   const navigation = useNavigation();
   const isNavigation = Boolean(navigation.location);
+  const { isBootstrapping } = useAuth();
 
-  useAuth();
+  if (isBootstrapping) {
+    return <AppLoader />;
+  }
 
   return (
     <>

@@ -1,5 +1,7 @@
-import AddUser from "./_auth.add-bot/addUser";
+import { lazy, Suspense } from "react";
 import type { Route } from "./+types/_auth.channels";
+
+const AddUser = lazy(() => import("./_auth.add-bot/addUser"));
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -9,5 +11,9 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function ChannelsRoute() {
-  return <AddUser />;
+  return (
+    <Suspense fallback={null}>
+      <AddUser />
+    </Suspense>
+  );
 }

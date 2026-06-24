@@ -3,10 +3,10 @@ import { useAuth } from "~/hooks/useAuth";
 import s from "./main-page.module.css";
 
 export function ProfileView() {
-  const { user, isLoading } = useAuth();
+  const { user } = useAuth();
 
-  if (isLoading || !user?.id) {
-    return <div className={s.loading}>Загрузка профиля...</div>;
+  if (!user?.id) {
+    return null;
   }
 
   return (
