@@ -1,45 +1,35 @@
-import { Outlet } from "react-router";
+import { Outlet, useNavigation } from "react-router";
 import "./global.css";
 
 import { Provider } from "react-redux";
 import { store } from "./store/store";
-import { useNavigation } from "react-router";
 import { GlobalSpiner } from "./features/globalSpiner";
-import { Layout } from "./Layout";
 import { Navigation } from "./Navigate";
 import { useAuth } from "./hooks/useAuth";
+import { HydrateFallback } from "./components/HydrateFallback";
 
+export { Layout } from "./Layout";
+export { HydrateFallback };
 
-
-
-
-
-export function Root() {
-
-  
+export default function Root() {
   return (
     <Provider store={store}>
-      <Layout>
-        <App/>
-      </Layout>
+      <App />
     </Provider>
   );
 }
-export function App() {
+
+function App() {
   const navigation = useNavigation();
   const isNavigation = Boolean(navigation.location);
-  
-  // Инициализация авторизации при загрузке приложения
-  // Данные автоматически синхронизируются с Redux через extraReducers
+
   useAuth();
 
   return (
     <>
-      <Navigation/>
+      <Navigation />
       {isNavigation && <GlobalSpiner />}
       <Outlet />
     </>
-  )
+  );
 }
- 
-export default Root;
