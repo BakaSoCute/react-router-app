@@ -21,27 +21,29 @@ export const useAuth = () => {
   // 3. Пользователь разлогинен И мы уже получили ответ от validUser (validData !== undefined)
   // Но делаем запрос, если это первая загрузка (wasLoggedOut === false И validData === undefined)
   const shouldSkipAuthChecks = isLoggingOut || wasLoggedOut
-  
+
   // Проверка валидности сессии
   const { data: validData, isLoading: isValidLoading, isError: isValidError } = useValidUserQuery(undefined, {
     pollingInterval: 15 * 60 * 1000, // Проверка каждые 15 минут
     refetchOnMountOrArgChange: true,
-    skip: false, // Блокируем запросы после logout
+    skip: shouldSkipAuthChecks,
   })
 
-  // Получение данных пользователя (только если валидация прошла)
-  // const shouldSkipGetUser = shouldSkipAuthChecks || (validData !== undefined && validData.isValid === false)
+  const isValid = validData?.isValid === true
+  const shouldFetchUser = !shouldSkipAuthChecks && isValid
+
+  // Данные пользователя — только после успешной валидации сессии
   const { data: userData, isLoading: isUserLoading, isError: isUserError } = useGetUserQuery(undefined, {
-    skip: false,
+    skip: !shouldFetchUser,
     refetchOnMountOrArgChange: false,
   })
 
-  const isLoading = isValidLoading || isUserLoading
-  const isError = isValidError || isUserError
-  const isValid = validData?.isValid ?? false
-
   // Приоритет: данные из RTK Query (свежие), если нет - из Redux
   const currentUser = userData?.user ?? user
+
+  const isLoading =
+    isValidLoading || (shouldFetchUser && isUserLoading && !currentUser?.id)
+  const isError = isValidError || (shouldFetchUser && isUserError)
 
   return {
     // Состояние авторизации

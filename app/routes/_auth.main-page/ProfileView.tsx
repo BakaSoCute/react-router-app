@@ -16,7 +16,12 @@ export function ProfileView() {
         Проверяйте данные аккаунта и переходите к управлению ботом на выбранном канале.
       </p>
       <div className={s.profile}>
-        <img src={user.profile_image_url} alt={user.display_name} />
+        <img
+          src={user.profile_image_url}
+          alt={user.display_name}
+          width={96}
+          height={96}
+        />
         <p>
           <strong>ID:</strong> {user.id}
         </p>

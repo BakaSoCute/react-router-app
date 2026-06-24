@@ -1,13 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import {
   useAddBotToChannelMutation,
   useGetBotChannelStatusQuery,
   useGetChannelEligibilityQuery,
   useGetManagedChannelsQuery,
-  useGetUserQuery,
   useRemoveBotFromChannelMutation,
   type ChannelEligibilityResponse,
 } from "~/api/api";
+import { useAuth } from "~/hooks/useAuth";
 import { DashboardLayout } from "~/components/dashboard/DashboardLayout";
 import {
   IconBrain,
@@ -17,14 +17,33 @@ import {
   IconPlug,
   IconTimer,
 } from "~/components/icons";
-import { BotStatusPanel } from "./BotStatusPanel";
-import { ChannelAiPromptPanel } from "./ChannelAiPromptPanel";
-import { ChannelAiModelPanel } from "./ChannelAiModelPanel";
-import { ChatModulesPanel } from "./ChatModulesPanel";
-import { CustomCommandsPanel } from "./CustomCommandsPanel";
-import { TimersPanel } from "./TimersPanel";
-import { ClipsPanel } from "./ClipsPanel";
 import s from "./addUser.module.css";
+
+const BotStatusPanel = lazy(() =>
+  import("./BotStatusPanel").then((m) => ({ default: m.BotStatusPanel }))
+);
+const ChatModulesPanel = lazy(() =>
+  import("./ChatModulesPanel").then((m) => ({ default: m.ChatModulesPanel }))
+);
+const ChannelAiPromptPanel = lazy(() =>
+  import("./ChannelAiPromptPanel").then((m) => ({ default: m.ChannelAiPromptPanel }))
+);
+const ChannelAiModelPanel = lazy(() =>
+  import("./ChannelAiModelPanel").then((m) => ({ default: m.ChannelAiModelPanel }))
+);
+const CustomCommandsPanel = lazy(() =>
+  import("./CustomCommandsPanel").then((m) => ({ default: m.CustomCommandsPanel }))
+);
+const TimersPanel = lazy(() =>
+  import("./TimersPanel").then((m) => ({ default: m.TimersPanel }))
+);
+const ClipsPanel = lazy(() =>
+  import("./ClipsPanel").then((m) => ({ default: m.ClipsPanel }))
+);
+
+function PanelFallback() {
+  return <p className={s.loadingText}>Загрузка…</p>;
+}
 
 type SectionId = "overview" | "modules" | "ai-prompt" | "ai-model" | "commands" | "timers" | "clips";
 
@@ -71,9 +90,8 @@ function broadcasterTypeLabel(t: ChannelEligibilityResponse["broadcasterType"]):
 }
 
 export default function AddUser() {
-  const { data: userPayload, isLoading: userLoading } = useGetUserQuery();
+  const { user, isLoading: userLoading } = useAuth();
   const { data: managedPayload, isLoading: channelsLoading } = useGetManagedChannelsQuery();
-  const user = userPayload?.user;
   const managedChannels = managedPayload?.channels ?? [];
 
   const [addBot, addState] = useAddBotToChannelMutation();
@@ -342,22 +360,48 @@ export default function AddUser() {
       case "overview":
         return (
           <div className={s.sectionStack}>
-            <BotStatusPanel channelId={channelId} />
+            <Suspense fallback={<PanelFallback />}>
+              <BotStatusPanel channelId={channelId} />
+            </Suspense>
             {connectionCard}
           </div>
         );
       case "modules":
-        return <ChatModulesPanel channelId={channelId} subscribed={subscribed} />;
+        return (
+          <Suspense fallback={<PanelFallback />}>
+            <ChatModulesPanel channelId={channelId} subscribed={subscribed} />
+          </Suspense>
+        );
       case "ai-prompt":
-        return <ChannelAiPromptPanel channelId={channelId} subscribed={subscribed} />;
+        return (
+          <Suspense fallback={<PanelFallback />}>
+            <ChannelAiPromptPanel channelId={channelId} subscribed={subscribed} />
+          </Suspense>
+        );
       case "ai-model":
-        return <ChannelAiModelPanel channelId={channelId} subscribed={subscribed} />;
+        return (
+          <Suspense fallback={<PanelFallback />}>
+            <ChannelAiModelPanel channelId={channelId} subscribed={subscribed} />
+          </Suspense>
+        );
       case "commands":
-        return <CustomCommandsPanel channelId={channelId} subscribed={subscribed} />;
+        return (
+          <Suspense fallback={<PanelFallback />}>
+            <CustomCommandsPanel channelId={channelId} subscribed={subscribed} />
+          </Suspense>
+        );
       case "timers":
-        return <TimersPanel channelId={channelId} subscribed={subscribed} />;
+        return (
+          <Suspense fallback={<PanelFallback />}>
+            <TimersPanel channelId={channelId} subscribed={subscribed} />
+          </Suspense>
+        );
       case "clips":
-        return <ClipsPanel channelId={channelId} subscribed={subscribed} />;
+        return (
+          <Suspense fallback={<PanelFallback />}>
+            <ClipsPanel channelId={channelId} subscribed={subscribed} />
+          </Suspense>
+        );
     }
   };
 
