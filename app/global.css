@@ -129,6 +129,33 @@ body::before {
   100% { transform: rotate(360deg); }
 }
 
+.app-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  min-height: 100vh;
+  margin: 0;
+  color: var(--text-muted);
+  background: var(--gradient-bg, linear-gradient(165deg, #070414 0%, #0a0820 100%));
+}
+
+.app-loader-spinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid rgba(255, 110, 199, 0.2);
+  border-top-color: var(--neon-pink);
+  border-right-color: var(--neon-cyan);
+  border-radius: 50%;
+  animation: spin-neon 0.8s linear infinite;
+}
+
+.app-loader-message {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
 a {
   color: inherit;
   text-decoration: none;

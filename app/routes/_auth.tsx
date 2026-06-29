@@ -1,13 +1,21 @@
 import { Outlet, Navigate, useLocation } from "react-router";
 import { useAuth } from "~/hooks/useAuth";
-import { AppLoader } from "~/components/AppLoader";
+
+function RouteLoader({ message = "Загрузка…" }: { message?: string }) {
+  return (
+    <div className="app-loader" role="status" aria-live="polite" aria-label={message}>
+      <span className="app-loader-spinner" aria-hidden="true" />
+      <p className="app-loader-message">{message}</p>
+    </div>
+  );
+}
 
 export default function AuthLayout() {
   const location = useLocation();
   const { isAuthenticated, isBootstrapping } = useAuth();
 
   if (isBootstrapping) {
-    return <AppLoader message="Проверка сессии…" />;
+    return <RouteLoader message="Проверка сессии…" />;
   }
 
   if (!isAuthenticated) {

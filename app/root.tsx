@@ -5,11 +5,19 @@ import { Provider } from "react-redux";
 import { store } from "./store/store";
 import { Navigation } from "./Navigate";
 import { useAuth } from "./hooks/useAuth";
-import { AppLoader } from "./components/AppLoader";
 import { HydrateFallback } from "./components/HydrateFallback";
 
 export { Layout } from "./Layout";
 export { HydrateFallback };
+
+function RouteLoader({ message = "Загрузка…" }: { message?: string }) {
+  return (
+    <div className="app-loader" role="status" aria-live="polite" aria-label={message}>
+      <span className="app-loader-spinner" aria-hidden="true" />
+      <p className="app-loader-message">{message}</p>
+    </div>
+  );
+}
 
 export default function Root() {
   return (
@@ -40,7 +48,7 @@ function App() {
   return (
     <>
       <Navigation isNavigating={isNavigation} />
-      {showAuthLoader ? <AppLoader /> : <Outlet />}
+      {showAuthLoader ? <RouteLoader /> : <Outlet />}
     </>
   );
 }
