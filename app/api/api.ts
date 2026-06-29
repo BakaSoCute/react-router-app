@@ -55,6 +55,32 @@ type User = {
 type Valid = {
     isValid: boolean
 }
+type SessionUser = {
+    id: string,
+    login: string,
+    display_name: string,
+    email?: string,
+    description?: string,
+    profile_image_url: string,
+    created_at: string,
+    broadcaster_type: string,
+    view_count: number
+}
+type SessionResponse = {
+    isValid: boolean
+    user: SessionUser | null
+    timestamp: string
+}
+type DashboardBootstrapResponse = {
+    success: boolean
+    user: {
+        id: string
+        login: string
+    }
+    managedChannels: ManagedChannel[]
+    botStatus: BotChannelStatus
+    eligibility?: ChannelEligibilityResponse | null
+}
 type Refresh = {
     status: string
 }
@@ -252,8 +278,16 @@ export type ChannelEligibilityResponse = {
 export const api = createApi({
     reducerPath: "api",
     baseQuery: baseQueryWithReauth,
-    tagTypes: ["User","Valid","Refresh","Auth","BotStatus","ChatModules","ChannelAiPrompt","ChannelAiModel","CustomCommands","Timers","ClipsSettings","ChannelEligibility","Admin"],
+    tagTypes: ["User","Valid","Session","Refresh","Auth","BotStatus","DashboardBootstrap","ChatModules","ChannelAiPrompt","ChannelAiModel","CustomCommands","Timers","ClipsSettings","ChannelEligibility","Admin"],
     endpoints: (builder) => ({
+        getSession: builder.query<SessionResponse, void>({
+            query: () => '/api/auth/session',
+            keepUnusedDataFor: 60,
+            providesTags: (result) =>
+                result?.isValid && result.user
+                    ? [{ type: 'Session', id: result.user.id }, { type: 'Auth' }]
+                    : [{ type: 'Auth' }],
+        }),
         getUser: builder.query<User, void>({
             query: () => '/api/auth/twitch/user',
             providesTags: (result) => 
@@ -280,7 +314,19 @@ export const api = createApi({
                 url: "/api/auth/logout",
                 method: "POST",
             }),
-            invalidatesTags: ["User", "Valid", "Auth"]
+            invalidatesTags: ["User", "Valid", "Session", "Auth"]
+        }),
+        getDashboardBootstrap: builder.query<DashboardBootstrapResponse, string>({
+            query: (channelId) => ({
+                url: "/api/v1/dashboard/bootstrap",
+                params: { channelId },
+            }),
+            keepUnusedDataFor: 120,
+            providesTags: (_result, _err, channelId) => [
+                { type: "DashboardBootstrap", id: channelId },
+                { type: "BotStatus", id: channelId },
+                { type: "ChannelEligibility", id: channelId },
+            ],
         }),
         addBotToChannel: builder.mutation<AddBotResponse, { channelId?: string } | void>({
             query: (body) => ({
@@ -288,7 +334,7 @@ export const api = createApi({
                 method: "POST",
                 body: body ?? {},
             }),
-            invalidatesTags: ["BotStatus", "ChatModules", "ChannelAiPrompt", "ChannelAiModel", "CustomCommands", "Timers"],
+            invalidatesTags: ["BotStatus", "DashboardBootstrap", "ChatModules", "ChannelAiPrompt", "ChannelAiModel", "CustomCommands", "Timers"],
         }),
         removeBotFromChannel: builder.mutation<RemoveBotResponse, { channelId?: string } | void>({
             query: (body) => ({
@@ -296,13 +342,14 @@ export const api = createApi({
                 method: "POST",
                 body: body ?? {},
             }),
-            invalidatesTags: ["BotStatus", "ChatModules", "ChannelAiPrompt", "ChannelAiModel", "CustomCommands", "Timers"],
+            invalidatesTags: ["BotStatus", "DashboardBootstrap", "ChatModules", "ChannelAiPrompt", "ChannelAiModel", "CustomCommands", "Timers"],
         }),
         getBotChannelStatus: builder.query<BotChannelStatus, string>({
             query: (channelId) => ({
                 url: "/api/auth/railway/bot-status",
                 params: { channelId },
             }),
+            keepUnusedDataFor: 60,
             providesTags: (_result, _err, channelId) => [
                 { type: "BotStatus", id: channelId },
             ],
@@ -312,18 +359,21 @@ export const api = createApi({
                 url: "/api/auth/railway/channel-eligibility",
                 params: { channelId },
             }),
+            keepUnusedDataFor: 180,
             providesTags: (_result, _err, channelId) => [
                 { type: "ChannelEligibility", id: channelId },
             ],
         }),
         getManagedChannels: builder.query<ManagedChannelsResponse, void>({
             query: () => "/api/auth/railway/managed-channels",
+            keepUnusedDataFor: 300,
         }),
         getChatModules: builder.query<ChatModulesResponse, string>({
             query: (channelId) => ({
                 url: "/api/auth/railway/chat-modules",
                 params: { channelId },
             }),
+            keepUnusedDataFor: 120,
             providesTags: (result) =>
                 result?.channelId ? [{ type: "ChatModules", id: result.channelId }] : [],
         }),
@@ -343,6 +393,7 @@ export const api = createApi({
                 url: "/api/auth/railway/channel-ai-prompt",
                 params: { channelId },
             }),
+            keepUnusedDataFor: 120,
             providesTags: (result) =>
                 result?.channelId ? [{ type: "ChannelAiPrompt", id: result.channelId }] : [],
         }),
@@ -362,6 +413,7 @@ export const api = createApi({
                 url: "/api/auth/railway/channel-ai-model",
                 params: { channelId },
             }),
+            keepUnusedDataFor: 120,
             providesTags: (result) =>
                 result?.channelId ? [{ type: "ChannelAiModel", id: result.channelId }] : [],
         }),
@@ -381,6 +433,7 @@ export const api = createApi({
                 url: "/api/auth/railway/custom-commands",
                 params: { channelId },
             }),
+            keepUnusedDataFor: 120,
             providesTags: (result) =>
                 result?.channelId ? [{ type: "CustomCommands", id: result.channelId }] : [],
         }),
@@ -437,6 +490,7 @@ export const api = createApi({
                 url: "/api/auth/railway/timers",
                 params: { channelId },
             }),
+            keepUnusedDataFor: 120,
             providesTags: (result) =>
                 result?.channelId ? [{ type: "Timers", id: result.channelId }] : [],
         }),
@@ -487,6 +541,7 @@ export const api = createApi({
                 url: "/api/auth/railway/clips/settings",
                 params: { channelId },
             }),
+            keepUnusedDataFor: 120,
             providesTags: (result) =>
                 result?.channelId ? [{ type: "ClipsSettings", id: result.channelId }] : [],
         }),
@@ -546,8 +601,10 @@ export const api = createApi({
 });
 
 export const { 
+    useGetSessionQuery,
     useGetUserQuery,
     useValidUserQuery,
+    useGetDashboardBootstrapQuery,
     useRefreshTokenMutation,
     useLogoutMutation,
     useAddBotToChannelMutation,

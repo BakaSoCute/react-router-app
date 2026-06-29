@@ -107,6 +107,34 @@
   background: var(--color-err-bg);
 }
 
+.navProgress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 200;
+  background: linear-gradient(
+    90deg,
+    var(--neon-pink),
+    var(--neon-purple, #b44aff),
+    var(--neon-pink)
+  );
+  background-size: 200% 100%;
+  animation: navProgressPulse 1s ease-in-out infinite;
+  box-shadow: 0 0 12px var(--neon-pink-glow);
+  pointer-events: none;
+}
+
+@keyframes navProgressPulse {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
 @media (max-width: 720px) {
   .menuBtn {
     display: inline-flex;

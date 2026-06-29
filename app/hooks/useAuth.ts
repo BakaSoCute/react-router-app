@@ -1,53 +1,56 @@
-import { useGetUserQuery, useValidUserQuery } from "~/api/api"
+import { useEffect } from "react"
+import { useGetSessionQuery } from "~/api/api"
 import { useAppSelector } from "~/store/hooks"
 import { selectLogin, selectUser, selectIsLoggingOut, selectWasLoggedOut } from "~/features/account/accountSlice"
+import { perfMark, perfMeasure } from "~/lib/perf"
 
 /**
  * Кастомный хук для работы с авторизацией
  * Объединяет данные из RTK Query и Redux для удобства использования
  */
 export const useAuth = () => {
-  // Проверяем, идет ли процесс logout
   const isLoggingOut = useAppSelector(selectIsLoggingOut)
   const wasLoggedOut = useAppSelector(selectWasLoggedOut)
-  
-  // Данные из Redux (синхронизируются через extraReducers)
+
   const isLogin = useAppSelector(selectLogin)
   const user = useAppSelector(selectUser)
-  
-  // Блокируем запросы, если:
-  // 1. Идет процесс logout
-  // 2. Был выполнен logout (чтобы не делать запросы после logout, даже если куки остались)
-  // 3. Пользователь разлогинен И мы уже получили ответ от validUser (validData !== undefined)
-  // Но делаем запрос, если это первая загрузка (wasLoggedOut === false И validData === undefined)
+
   const shouldSkipAuthChecks = isLoggingOut || wasLoggedOut
 
-  // Проверка валидности сессии
-  const { data: validData, isLoading: isValidLoading, isError: isValidError } = useValidUserQuery(undefined, {
-    pollingInterval: 15 * 60 * 1000, // Проверка каждые 15 минут
+  useEffect(() => {
+    if (!shouldSkipAuthChecks) {
+      perfMark("auth_bootstrap_start")
+    }
+  }, [shouldSkipAuthChecks])
+
+  const {
+    data: sessionData,
+    isLoading: isSessionLoading,
+    isFetching: isSessionFetching,
+    isError: isSessionError,
+  } = useGetSessionQuery(undefined, {
+    pollingInterval: 15 * 60 * 1000,
     refetchOnMountOrArgChange: true,
     skip: shouldSkipAuthChecks,
   })
 
-  const isValid = validData?.isValid === true
-  const shouldFetchUser = !shouldSkipAuthChecks && isValid
+  const isValid = sessionData?.isValid === true
+  const sessionUser = sessionData?.user ?? null
+  const currentUser = sessionUser ?? user
 
-  // Данные пользователя — только после успешной валидации сессии
-  const { data: userData, isLoading: isUserLoading, isError: isUserError } = useGetUserQuery(undefined, {
-    skip: !shouldFetchUser,
-    refetchOnMountOrArgChange: false,
-  })
-
-  // Приоритет: данные из RTK Query (свежие), если нет - из Redux
-  const currentUser = userData?.user ?? user
+  useEffect(() => {
+    if (sessionUser?.id) {
+      perfMark("auth_bootstrap_end")
+      perfMeasure("auth_bootstrap", "auth_bootstrap_start", "auth_bootstrap_end")
+    }
+  }, [sessionUser?.id])
 
   const isLoading =
-    isValidLoading || (shouldFetchUser && isUserLoading && !currentUser?.id)
-  const isBootstrapping = isLoading
-  const isError = isValidError || (shouldFetchUser && isUserError)
+    isSessionLoading || (isSessionFetching && !sessionData && !wasLoggedOut)
+  const isBootstrapping = isLoading && sessionData === undefined
+  const isError = isSessionError
 
   return {
-    // Состояние авторизации
     isAuthenticated: isValid && isLogin && !!currentUser?.id,
     isValid,
     isLogin,
@@ -55,13 +58,14 @@ export const useAuth = () => {
     isBootstrapping,
     isError,
 
-    // Данные пользователя
     user: currentUser,
-    userData: userData?.user ?? null,
+    userData: sessionUser,
 
-    // Сырые данные из API
-    validData,
-    userDataRaw: userData,
+    validData: sessionData ? { isValid: sessionData.isValid } : undefined,
+    userDataRaw: sessionData?.user
+      ? { success: true, user: sessionData.user, timestamp: sessionData.timestamp }
+      : undefined,
+    sessionData,
   }
 }
 

@@ -20,7 +20,11 @@ function navClass(isActive: boolean): string {
   return isActive ? `${s.nav} ${s.navActive}` : s.nav;
 }
 
-export const Navigation = () => {
+type NavigationProps = {
+  isNavigating?: boolean;
+};
+
+export const Navigation = ({ isNavigating = false }: NavigationProps) => {
   const isLoggedIn = useAppSelector(selectLogin);
   const { data: adminMe } = useGetAdminMeQuery(undefined, { skip: !isLoggedIn });
   const [menuOpen, setMenuOpen] = useState(false);
@@ -29,6 +33,9 @@ export const Navigation = () => {
 
   return (
     <header className={s.header}>
+      {isNavigating ? (
+        <div className={s.navProgress} role="progressbar" aria-label="Загрузка страницы" />
+      ) : null}
       <NavLink to="/" className={s.brand} onClick={closeMenu}>
         <IconSparkle className={s.brandIcon} size={20} />
         <span>TsundereChanAI</span>

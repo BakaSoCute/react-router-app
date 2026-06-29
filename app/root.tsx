@@ -1,9 +1,8 @@
-import { Outlet, useNavigation } from "react-router";
+import { Outlet, useLocation, useNavigation } from "react-router";
 import "./global.css";
 
 import { Provider } from "react-redux";
 import { store } from "./store/store";
-import { GlobalSpiner } from "./features/globalSpiner";
 import { Navigation } from "./Navigate";
 import { useAuth } from "./hooks/useAuth";
 import { AppLoader } from "./components/AppLoader";
@@ -20,20 +19,28 @@ export default function Root() {
   );
 }
 
+function isAuthProtectedPath(pathname: string): boolean {
+  return (
+    pathname.startsWith("/channels") ||
+    pathname.startsWith("/profile") ||
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/logout")
+  );
+}
+
 function App() {
   const navigation = useNavigation();
+  const location = useLocation();
   const isNavigation = Boolean(navigation.location);
   const { isBootstrapping } = useAuth();
 
-  if (isBootstrapping) {
-    return <AppLoader />;
-  }
+  const authProtected = isAuthProtectedPath(location.pathname);
+  const showAuthLoader = authProtected && isBootstrapping;
 
   return (
     <>
-      <Navigation />
-      {isNavigation && <GlobalSpiner />}
-      <Outlet />
+      <Navigation isNavigating={isNavigation} />
+      {showAuthLoader ? <AppLoader /> : <Outlet />}
     </>
   );
 }

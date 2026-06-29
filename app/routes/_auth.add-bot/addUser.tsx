@@ -1,13 +1,12 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   useAddBotToChannelMutation,
-  useGetBotChannelStatusQuery,
-  useGetChannelEligibilityQuery,
-  useGetManagedChannelsQuery,
+  useGetDashboardBootstrapQuery,
   useRemoveBotFromChannelMutation,
   type ChannelEligibilityResponse,
 } from "~/api/api";
 import { useAuth } from "~/hooks/useAuth";
+import { perfMark, perfMeasure } from "~/lib/perf";
 import { DashboardLayout } from "~/components/dashboard/DashboardLayout";
 import {
   IconBrain,
@@ -89,14 +88,32 @@ function broadcasterTypeLabel(t: ChannelEligibilityResponse["broadcasterType"]):
 
 export default function AddUser() {
   const { user } = useAuth();
-  const { data: managedPayload, isLoading: channelsLoading } = useGetManagedChannelsQuery(undefined, {
-    skip: !user?.id,
-  });
-  const managedChannels = managedPayload?.channels ?? [];
+  const userId = user?.id ?? "";
+  const [selectedChannelId, setSelectedChannelId] = useState("");
+  const bootstrapChannelId = selectedChannelId || userId;
+
+  useEffect(() => {
+    perfMark("channels_page_start");
+  }, []);
+
+  const { data: bootstrap, isLoading: bootstrapLoading, isFetching: bootstrapFetching } =
+    useGetDashboardBootstrapQuery(bootstrapChannelId, {
+      skip: !userId || !bootstrapChannelId,
+      refetchOnMountOrArgChange: true,
+    });
+
+  const managedChannels = bootstrap?.managedChannels ?? [];
+  const channelsLoading = bootstrapLoading && !bootstrap;
+
+  useEffect(() => {
+    if (bootstrap?.managedChannels?.length) {
+      perfMark("channels_page_ready");
+      perfMeasure("channels_page_ready", "channels_page_start", "channels_page_ready");
+    }
+  }, [bootstrap?.managedChannels?.length]);
 
   const [addBot, addState] = useAddBotToChannelMutation();
   const [removeBot, removeState] = useRemoveBotFromChannelMutation();
-  const [selectedChannelId, setSelectedChannelId] = useState("");
   const [activeSection, setActiveSection] = useState<SectionId>("overview");
   const [activatedSections, setActivatedSections] = useState<Set<SectionId>>(
     () => new Set(["overview"])
@@ -119,16 +136,14 @@ export default function AddUser() {
   );
 
   const canManageBotConnection = useMemo(() => {
-    if (!user?.id || !selectedChannelId) return false;
-    if (selectedChannelId === user.id) return true;
+    if (!selectedChannelId) return false;
+    if (selectedChannelId === userId) return true;
     if (selectedChannel?.source === "self") return true;
     return selectedChannel?.moderatorRole === "lead_moderator";
-  }, [user?.id, selectedChannelId, selectedChannel]);
+  }, [userId, selectedChannelId, selectedChannel]);
 
-  const statusChannelId = selectedChannelId || user?.id || "";
-  const { data: botStatus, isLoading: botStatusLoading } = useGetBotChannelStatusQuery(statusChannelId, {
-    skip: !user?.id || !statusChannelId,
-  });
+  const botStatus = bootstrap?.botStatus;
+  const botStatusLoading = bootstrapLoading || (bootstrapFetching && !botStatus);
 
   const waitingFirstStatus = botStatusLoading && !botStatus;
   const subscribed = Boolean(botStatus?.subscribed);
@@ -136,17 +151,15 @@ export default function AddUser() {
   const needsEligibilityCheck =
     canManageBotConnection && Boolean(selectedChannelId) && botStatus?.subscribed !== true;
 
-  const { data: eligibility, isLoading: eligibilityLoading, isError: eligibilityError } =
-    useGetChannelEligibilityQuery(selectedChannelId, {
-      skip: !needsEligibilityCheck,
-    });
+  const eligibility = needsEligibilityCheck ? bootstrap?.eligibility ?? undefined : undefined;
+  const eligibilityLoading = needsEligibilityCheck && bootstrapLoading && eligibility === undefined;
+  const eligibilityError = false;
 
   const canConnectBot =
     !needsEligibilityCheck ||
     (eligibility?.success === true && eligibility.eligible === true);
 
   useEffect(() => {
-    if (!user?.id) return;
     if (managedChannels.length > 0) {
       setSelectedChannelId((prev) => {
         if (prev && managedChannels.some((ch) => ch.id === prev)) return prev;
@@ -154,8 +167,8 @@ export default function AddUser() {
       });
       return;
     }
-    setSelectedChannelId((prev) => (prev ? prev : user.id));
-  }, [managedChannels, user?.id]);
+    setSelectedChannelId((prev) => (prev ? prev : userId));
+  }, [managedChannels, userId]);
 
   const handleAdd = async () => {
     if (!selectedChannelId) return;
@@ -195,8 +208,8 @@ export default function AddUser() {
         disabled={channelsLoading || managedChannels.length === 0}
       >
         {managedChannels.length === 0 ? (
-          <option value={user.id}>
-            {channelsLoading ? "Загрузка…" : `${user.display_name} (ваш)`}
+          <option value={userId}>
+            {channelsLoading ? "Загрузка…" : `${user.display_name ?? user.login} (ваш)`}
           </option>
         ) : (
           managedChannels.map((ch) => (
@@ -224,7 +237,7 @@ export default function AddUser() {
         </p>
       ) : (
         <p className={s.hint}>
-          Канал: <code className={s.code}>{selectedChannelId || user.id}</code>
+          Канал: <code className={s.code}>{selectedChannelId || userId}</code>
         </p>
       )}
       {canManageBotConnection ? (
@@ -360,7 +373,7 @@ export default function AddUser() {
   );
 
   const renderSection = () => {
-    const channelId = selectedChannelId || user.id;
+    const channelId = selectedChannelId || userId;
     const isActivated = activatedSections.has(activeSection);
 
     switch (activeSection) {
@@ -398,6 +411,10 @@ export default function AddUser() {
     }
   };
 
+  if (!userId || !user.login) {
+    return null;
+  }
+
   return (
     <DashboardLayout
       title="Панель бота"
@@ -407,7 +424,7 @@ export default function AddUser() {
       onNavigate={handleNavigate}
       sidebarExtra={channelSelect}
     >
-      {user?.id ? renderSection() : null}
+      {renderSection()}
     </DashboardLayout>
   );
 }

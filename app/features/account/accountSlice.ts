@@ -61,7 +61,58 @@ const accountSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder
-            // Синхронизация с getUser endpoint
+            .addMatcher(
+                api.endpoints.getSession.matchFulfilled,
+                (state, action) => {
+                    if (!action.payload.isValid || !action.payload.user) {
+                        state.isLogin = false
+                        state.user = {
+                            id: null,
+                            login: null,
+                            display_name: "",
+                            email: null,
+                            description: null,
+                            profile_image_url: "",
+                            created_at: null,
+                            broadcaster_type: null,
+                            view_count: null
+                        }
+                        return
+                    }
+                    const u = action.payload.user
+                    state.user = {
+                        id: u.id,
+                        login: u.login,
+                        display_name: u.display_name,
+                        email: u.email ?? null,
+                        description: u.description ?? null,
+                        profile_image_url: u.profile_image_url,
+                        created_at: u.created_at,
+                        broadcaster_type: u.broadcaster_type,
+                        view_count: u.view_count
+                    }
+                    state.isLogin = true
+                    state.wasLoggedOut = false
+                }
+            )
+            .addMatcher(
+                api.endpoints.getSession.matchRejected,
+                (state) => {
+                    state.isLogin = false
+                    state.user = {
+                        id: null,
+                        login: null,
+                        display_name: "",
+                        email: null,
+                        description: null,
+                        profile_image_url: "",
+                        created_at: null,
+                        broadcaster_type: null,
+                        view_count: null
+                    }
+                }
+            )
+            // Синхронизация с getUser endpoint (legacy)
             .addMatcher(
                 api.endpoints.getUser.matchFulfilled,
                 (state, action) => {
