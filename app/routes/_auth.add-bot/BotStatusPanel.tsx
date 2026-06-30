@@ -1,6 +1,7 @@
 import { useGetBotChannelStatusQuery } from "~/api";
 import { PanelSkeleton } from "~/components/dashboard/PanelSkeleton";
 import { useAdaptivePolling } from "~/hooks/useAdaptivePolling";
+import { useChannelStatusStream } from "~/hooks/useChannelStatusStream";
 import s from "./BotStatusPanel.module.css";
 
 function statusMessage(error: unknown): string {
@@ -25,7 +26,8 @@ type Props = {
 };
 
 export function BotStatusPanel({ channelId, pollActive = true }: Props) {
-  const pollingInterval = useAdaptivePolling(pollActive);
+  const { isStreamOpen } = useChannelStatusStream(channelId, { enabled: pollActive });
+  const pollingInterval = useAdaptivePolling(pollActive && !isStreamOpen);
 
   const { data, error, isLoading, isFetching, isError, refetch } = useGetBotChannelStatusQuery(
     channelId,
@@ -110,7 +112,11 @@ export function BotStatusPanel({ channelId, pollActive = true }: Props) {
       </div>
 
       <p className={s.polling}>
-        {isFetching && !isLoading ? "Обновление…" : "Автообновление каждые 30 с (только на вкладке «Обзор»)"}
+        {isStreamOpen
+          ? "Обновление в реальном времени"
+          : isFetching && !isLoading
+            ? "Обновление…"
+            : "Автообновление включено"}
         {botAnswering ? " · бот может отвечать в чате" : ""}
       </p>
     </section>
