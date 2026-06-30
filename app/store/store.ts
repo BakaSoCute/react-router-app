@@ -1,7 +1,8 @@
-import { configureStore } from "@reduxjs/toolkit";import accountReducer from "../features/account/accountSlice"
-import { api } from "../api/api";
+import { configureStore } from "@reduxjs/toolkit";
+import accountReducer from "../features/account/accountSlice";
+import { api } from "../api";
 
- export const store = configureStore({
+export const store = configureStore({
   reducer: {
     account: accountReducer,
     [api.reducerPath]: api.reducer

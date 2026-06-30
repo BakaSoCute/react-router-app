@@ -380,7 +380,7 @@ export default function AddUser() {
       case "overview":
         return (
           <div className={s.sectionStack}>
-            <BotStatusPanel channelId={channelId} />
+            <BotStatusPanel channelId={channelId} pollActive={activeSection === "overview"} />
             {connectionCard}
           </div>
         );

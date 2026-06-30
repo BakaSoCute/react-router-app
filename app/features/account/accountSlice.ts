@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit"
-import { api } from "~/api/api"
+import { api } from "~/api";
 
 interface AccountSetings {
     isLogin: boolean,

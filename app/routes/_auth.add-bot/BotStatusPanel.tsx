@@ -1,4 +1,6 @@
-import { useGetBotChannelStatusQuery } from "~/api/api";
+import { useGetBotChannelStatusQuery } from "~/api";
+import { PanelSkeleton } from "~/components/dashboard/PanelSkeleton";
+import { useAdaptivePolling } from "~/hooks/useAdaptivePolling";
 import s from "./BotStatusPanel.module.css";
 
 function statusMessage(error: unknown): string {
@@ -18,24 +20,24 @@ function statusMessage(error: unknown): string {
 
 type Props = {
   channelId: string;
+  /** Poll only when overview tab is active (default true). */
+  pollActive?: boolean;
 };
 
-export function BotStatusPanel({ channelId }: Props) {
+export function BotStatusPanel({ channelId, pollActive = true }: Props) {
+  const pollingInterval = useAdaptivePolling(pollActive);
+
   const { data, error, isLoading, isFetching, isError, refetch } = useGetBotChannelStatusQuery(
     channelId,
     {
       skip: !channelId,
-      pollingInterval: 30_000,
+      pollingInterval,
+      skipPollingIfUnfocused: true,
     }
   );
 
   if (isLoading && !data) {
-    return (
-      <section className={s.panel} aria-busy="true">
-        <h2 className={s.panelTitle}>Статус бота</h2>
-        <p className={s.loading}>Загрузка…</p>
-      </section>
-    );
+    return <PanelSkeleton title="Статус бота" rows={3} />;
   }
 
   if (isError || !data) {
@@ -105,11 +107,10 @@ export function BotStatusPanel({ channelId }: Props) {
             </span>
           </span>
         </div>
-
       </div>
 
       <p className={s.polling}>
-        {isFetching ? "Обновление…" : "Автообновление каждые 30 с"}
+        {isFetching && !isLoading ? "Обновление…" : "Автообновление каждые 30 с (только на вкладке «Обзор»)"}
         {botAnswering ? " · бот может отвечать в чате" : ""}
       </p>
     </section>

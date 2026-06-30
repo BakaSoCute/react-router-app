@@ -3,7 +3,8 @@ import {
   type CustomCommandUserLevel,
   useGetClipsSettingsQuery,
   usePatchClipsSettingsMutation,
-} from "~/api/api";
+} from "~/api";
+import { PanelSkeleton } from "~/components/dashboard/PanelSkeleton";
 import s from "./TimersPanel.module.css";
 
 type Props = {
@@ -58,7 +59,11 @@ export function ClipsPanel({ channelId, subscribed }: Props) {
     return null;
   }
 
-  const busy = isFetching || patchState.isLoading;
+  if (isLoading && !data) {
+    return <PanelSkeleton title="Клипы (!clip)" rows={3} />;
+  }
+
+  const busy = patchState.isLoading || (isFetching && !data);
 
   async function handleInvokeLevelChange(level: CustomCommandUserLevel) {
     setPatchErr(null);

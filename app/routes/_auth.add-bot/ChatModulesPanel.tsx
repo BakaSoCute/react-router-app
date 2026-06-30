@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useGetChatModulesQuery, usePatchChatModuleMutation } from "~/api/api";
+import { useGetChatModulesQuery, usePatchChatModuleMutation } from "~/api";
+import { PanelSkeleton } from "~/components/dashboard/PanelSkeleton";
 import s from "./ChatModulesPanel.module.css";
 
 type Props = {
@@ -39,12 +40,7 @@ export function ChatModulesPanel({ channelId, subscribed }: Props) {
   }
 
   if (isLoading && !data) {
-    return (
-      <section className={s.panel} aria-busy="true">
-        <h2 className={s.title}>Модули чата</h2>
-        <p className={s.loading}>Загрузка списка модулей…</p>
-      </section>
-    );
+    return <PanelSkeleton title="Модули чата" rows={4} />;
   }
 
   if (isError || !data?.success) {

@@ -1,15 +1,19 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   CHANNEL_AI_PROMPT_MAX_CHARS,
   useGetChannelAiPromptQuery,
   usePatchChannelAiPromptMutation,
-} from "~/api/api";
+} from "~/api";
+import { PanelSkeleton } from "~/components/dashboard/PanelSkeleton";
+import { useDebouncedValue } from "~/hooks/useDebouncedValue";
 import s from "./ChannelAiPromptPanel.module.css";
 
 type Props = {
   channelId: string;
   subscribed: boolean;
 };
+
+type SaveState = "idle" | "pending" | "saving" | "saved" | "error";
 
 function pickFetchError(error: unknown): string {
   if (error && typeof error === "object" && "data" in error) {
@@ -24,30 +28,57 @@ function pickFetchError(error: unknown): string {
 }
 
 export function ChannelAiPromptPanel({ channelId, subscribed }: Props) {
-  const { data, error, isLoading, isError, isFetching } = useGetChannelAiPromptQuery(channelId, {
+  const { data, error, isLoading, isError } = useGetChannelAiPromptQuery(channelId, {
     skip: !channelId || !subscribed,
   });
   const [patchPrompt, patchState] = usePatchChannelAiPromptMutation();
   const [draft, setDraft] = useState("");
+  const [saveState, setSaveState] = useState<SaveState>("idle");
+  const lastSavedRef = useRef("");
 
   useEffect(() => {
     if (data?.success && typeof data.prompt === "string") {
       setDraft(data.prompt);
+      lastSavedRef.current = data.prompt;
+      setSaveState("idle");
     }
   }, [data?.channelId, data?.prompt, data?.success]);
 
-  const busy = patchState.isLoading || (isFetching && !data);
-  const savedPrompt = data?.success ? data.prompt ?? "" : "";
-  const unchanged = draft === savedPrompt;
+  const debouncedDraft = useDebouncedValue(draft, 600);
+  const savedPrompt = data?.success ? (data.prompt ?? "") : "";
 
-  const handleSave = async () => {
-    if (!channelId || unchanged || busy) return;
-    try {
-      await patchPrompt({ channelId, prompt: draft }).unwrap();
-    } catch {
-      /* RTK Query */
+  useEffect(() => {
+    if (!channelId || !data?.success) return;
+    if (debouncedDraft === lastSavedRef.current) {
+      setSaveState((prev) => (prev === "pending" ? "idle" : prev));
+      return;
     }
-  };
+
+    let cancelled = false;
+    setSaveState("saving");
+
+    void patchPrompt({ channelId, prompt: debouncedDraft })
+      .unwrap()
+      .then(() => {
+        if (cancelled) return;
+        lastSavedRef.current = debouncedDraft;
+        setSaveState("saved");
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setSaveState("error");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedDraft, channelId, data?.success, patchPrompt]);
+
+  useEffect(() => {
+    if (draft !== debouncedDraft && draft !== lastSavedRef.current) {
+      setSaveState("pending");
+    }
+  }, [draft, debouncedDraft]);
 
   if (!subscribed) {
     return (
@@ -62,12 +93,7 @@ export function ChannelAiPromptPanel({ channelId, subscribed }: Props) {
   }
 
   if (isLoading && !data) {
-    return (
-      <section className={s.panel} aria-busy="true">
-        <h2 className={s.title}>Дополнительный промт для бота</h2>
-        <p className={s.loading}>Загрузка…</p>
-      </section>
-    );
+    return <PanelSkeleton title="Дополнительный промт для бота" rows={6} />;
   }
 
   if (isError || !data?.success) {
@@ -81,49 +107,50 @@ export function ChannelAiPromptPanel({ channelId, subscribed }: Props) {
     );
   }
 
+  const statusLabel =
+    saveState === "pending"
+      ? "Изменения…"
+      : saveState === "saving"
+        ? "Сохранение…"
+        : saveState === "saved"
+          ? "Сохранено"
+          : saveState === "error"
+            ? "Ошибка сохранения"
+            : null;
+
   return (
     <section className={s.panel} aria-label="Промт для ИИ">
       <h2 className={s.title}>Дополнительный промт для бота</h2>
       <p className={s.lead}>
         Текст ниже добавляется к настройкам бота <strong>только для выбранного канала</strong> и действует без
         перезапуска бота. Это не замена базовому характеру и правилам Twitch — формулируйте дополнительный тон, темы
-        стрима, табу-слова и т.п. Оставьте поле пустым и сохраните, чтобы сбросить. Влияет только на ответы через @TsundereChanAI
+        стрима, табу-слова и т.п. Оставьте поле пустым — автосохранение сбросит промт. Влияет только на ответы через
+        @TsundereChanAI
       </p>
       <textarea
         className={s.textarea}
         value={draft}
         maxLength={CHANNEL_AI_PROMPT_MAX_CHARS}
         onChange={(e) => setDraft(e.target.value)}
-        disabled={busy}
         spellCheck
         aria-label="Дополнительный промт канала"
       />
       <div className={s.metaRow}>
         <p className={s.counter}>
           {draft.length} / {CHANNEL_AI_PROMPT_MAX_CHARS}
-          {!unchanged ? " · есть несохранённые изменения" : null}
+          {statusLabel ? ` · ${statusLabel}` : null}
         </p>
-        <div className={s.actions}>
-          <button
-            type="button"
-            className={s.save}
-            disabled={busy || unchanged}
-            onClick={() => void handleSave()}
-          >
-            {patchState.isLoading ? "Сохранение…" : "Сохранить"}
-          </button>
-        </div>
       </div>
-      {patchState.isSuccess && !patchState.isLoading && unchanged && (
-        <p className={s.ok} role="status">
-          Сохранено. Следующие ответы бота уже учитывают этот текст.
-        </p>
-      )}
-      {patchState.isError && (
+      {saveState === "error" && patchState.error ? (
         <p className={s.err} role="alert">
           {pickFetchError(patchState.error)}
         </p>
-      )}
+      ) : null}
+      {saveState === "saved" && draft === savedPrompt ? (
+        <p className={s.ok} role="status">
+          Следующие ответы бота уже учитывают этот текст.
+        </p>
+      ) : null}
     </section>
   );
 }

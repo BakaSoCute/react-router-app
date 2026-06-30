@@ -4,10 +4,12 @@ import {
   type CustomCommandUserLevel,
   useCancelChannelTimerMutation,
   useGetChannelTimersQuery,
-  useGetUserQuery,
   usePatchTimerPermissionMutation,
   useStartChannelTimerMutation,
-} from "~/api/api";
+} from "~/api";
+import { PanelSkeleton } from "~/components/dashboard/PanelSkeleton";
+import { useAdaptivePolling } from "~/hooks/useAdaptivePolling";
+import { useAuth } from "~/hooks/useAuth";
 import s from "./TimersPanel.module.css";
 
 type Props = {
@@ -112,12 +114,14 @@ function ActiveTimerRow({ timer, busy, onCancel }: ActiveRowProps) {
 }
 
 export function TimersPanel({ channelId, subscribed }: Props) {
-  const { data: userPayload } = useGetUserQuery();
-  const userLogin = userPayload?.user?.login ?? "";
+  const { user } = useAuth();
+  const userLogin = user?.login ?? "";
+  const pollingInterval = useAdaptivePolling(subscribed);
 
   const { data, error, isLoading, isFetching, refetch } = useGetChannelTimersQuery(channelId, {
     skip: !channelId || !subscribed,
-    pollingInterval: 30_000,
+    pollingInterval,
+    skipPollingIfUnfocused: true,
   });
 
   const [startTimer, startState] = useStartChannelTimerMutation();
@@ -183,12 +187,7 @@ export function TimersPanel({ channelId, subscribed }: Props) {
   }
 
   if (isLoading && !data) {
-    return (
-      <section className={s.panel} aria-busy="true">
-        <h2 className={s.title}>Таймеры</h2>
-        <p className={s.loading}>Загрузка…</p>
-      </section>
-    );
+    return <PanelSkeleton title="Таймеры" rows={5} />;
   }
 
   if (error && !data) {
@@ -291,7 +290,9 @@ export function TimersPanel({ channelId, subscribed }: Props) {
         </div>
       )}
 
-      <p className={s.polling}>{isFetching ? "Обновление…" : "Автообновление каждые 30 с"}</p>
+      <p className={s.polling}>
+        {isFetching && !isLoading ? "Обновление…" : "Автообновление каждые 30 с (вкладка активна)"}
+      </p>
     </section>
   );
 }

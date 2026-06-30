@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import {
   useGetChannelAiModelQuery,
   usePatchChannelAiModelMutation,
-} from "~/api/api";
+} from "~/api";
+import { PanelSkeleton } from "~/components/dashboard/PanelSkeleton";
 import s from "./ChannelAiModelPanel.module.css";
 
 type Props = {
@@ -84,12 +85,7 @@ export function ChannelAiModelPanel({ channelId, subscribed }: Props) {
   }
 
   if (isLoading && !data) {
-    return (
-      <section className={s.panel} aria-busy="true">
-        <h2 className={s.title}>AI-модель</h2>
-        <p className={s.loading}>Загрузка…</p>
-      </section>
-    );
+    return <PanelSkeleton title="AI-модель" rows={3} />;
   }
 
   if (isError || !data?.success) {
