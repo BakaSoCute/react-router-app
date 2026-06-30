@@ -12,10 +12,6 @@
   z-index: 1;
 }
 
-.mascot {
-  margin-bottom: 0.5rem;
-}
-
 .card {
   display: flex;
   flex-direction: column;

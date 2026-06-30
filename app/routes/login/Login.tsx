@@ -1,6 +1,5 @@
 import s from "./css/Login.module.css";
 import { IconTwitch } from "~/components/icons";
-import { Mascot } from "~/components/Mascot";
 import { getBackendUrl } from "~/lib/backend-url";
 
 export const Login = () => {
@@ -11,7 +10,6 @@ export const Login = () => {
 
   return (
     <main className={s.main}>
-      {/* <Mascot size="sm" className={s.mascot} /> */}
       <section className={s.card}>
         <h1 className={s.title}>Вход в TsundereChanAI</h1>
         <p className={s.text}>

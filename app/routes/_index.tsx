@@ -1,7 +1,7 @@
 import type { Route } from "./+types/_index";
+import { useState } from "react";
 import { Link } from "react-router";
 import { useAuth } from "~/hooks/useAuth";
-import { Mascot } from "~/components/Mascot";
 import { IconBot, IconBrain, IconCommand, IconSparkle, IconTimer, IconTwitch } from "~/components/icons";
 import s from "../styles/index-page.module.css";
 
@@ -30,8 +30,74 @@ const FEATURES = [
   },
 ] as const;
 
+const COMMAND_DETAILS = [
+  {
+    title: "Для всех",
+    items: [
+      {
+        cmd: '!baka "запрос"',
+        summary: "запрос без памяти",
+        detail:
+          "Одноразовый ответ ИИ в стиле цундере-учёного — без истории диалога. Подходит для быстрых вопросов. Модель настраиваются в панели канала.",
+      },
+      {
+        cmd: "!baka status",
+        summary: "статус бота и таймеры",
+        detail:
+          "Показывает, включён ли бот на канале, и список активных таймеров с оставшимся временем. Работает даже когда бот выключен командой !baka off.",
+      },
+      {
+        cmd: '@TsundereChanAI "запрос"',
+        summary: "с памятью",
+        detail:
+          "Ответ с учётом недавней переписки в чате (контекст самого пользователя и обращения к боту от других пользователей) — бот помнит контекст. Можно задать свой промт канала в панели; он добавляется к базовому.",
+      },
+    ],
+  },
+  {
+    title: "Для модераторов",
+    items: [
+      {
+        cmd: "!baka on/off",
+        summary: "вкл/выкл бота",
+        detail:
+          "Выключает или включает ответы бота в чате. При выключении кастомные команды и управление (!baka on, !baka status) остаются доступны.",
+      },
+      {
+        cmd: "!timer clear [имя]",
+        summary: "отмена таймера",
+        detail:
+          "Без имени — отменяет все активные таймеры. С именем — только указанный таймер. Синоним: !baka timer clear.",
+      },
+    ],
+  },
+  {
+    title: "Настраиваемые",
+    items: [
+      {
+        cmd: "!timer [N] [имя]",
+        summary: "таймер на N минут",
+        detail:
+          "Запускает обратный отсчёт. Имя задаёт зритель; без имени используется его ник. Кто может вызывать команду — настраивается в панели.",
+      },
+      {
+        cmd: "!baka timer …",
+        summary: "то же, что !timer",
+        detail: "Полный синоним !timer: те же аргументы и поведение. (Поддержка старого синтаксиса)",
+      },
+      {
+        cmd: "!clip [имя] [время]",
+        summary: "создание клипа",
+        detail:
+          "Поля [имя] и [время] необязательны. Если не указано имя, то используется ник зрителя. Если не указано время, то используется 30 секунд.",
+      },
+    ],
+  },
+] as const;
+
 export default function mainPage() {
   const { isAuthenticated } = useAuth();
+  const [commandsExpanded, setCommandsExpanded] = useState(false);
 
   return (
     <main className={s.wrap}>
@@ -66,7 +132,6 @@ export default function mainPage() {
             )}
           </div>
         </div>
-        {/* <Mascot size="lg" className={s.mascot} /> */}
       </section>
 
       <section className={s.features}>
@@ -121,9 +186,52 @@ export default function mainPage() {
               <li>
                 <code className={s.code}>!baka timer …</code> — то же, что !timer
               </li>
+              <li>
+                <code className={s.code}>!clip [имя] [время]</code> — создание клипа
+              </li>
             </ul>
           </article>
         </div>
+
+        <div className={s.commandsActions}>
+          <button
+            type="button"
+            className={s.detailsToggle}
+            aria-expanded={commandsExpanded}
+            aria-controls="commands-details"
+            onClick={() => setCommandsExpanded((open) => !open)}
+          >
+            {commandsExpanded ? "Скрыть" : "Подробнее"}
+            <span className={`${s.detailsChevron} ${commandsExpanded ? s.detailsChevronOpen : ""}`} aria-hidden>
+              ▾
+            </span>
+          </button>
+        </div>
+
+        {commandsExpanded ? (
+          <div id="commands-details" className={s.commandsDetails}>
+            {COMMAND_DETAILS.map(({ title, items }) => (
+              <article key={title} className={s.commandDetailGroup}>
+                <h3 className={s.commandGroupTitle}>{title}</h3>
+                <ul className={s.commandDetailList}>
+                  {items.map(({ cmd, summary, detail }) => (
+                    <li key={cmd} className={s.commandDetailItem}>
+                      <p className={s.commandDetailHead}>
+                        <code className={s.code}>{cmd}</code>
+                        <span className={s.commandDetailSummary}>— {summary}</span>
+                      </p>
+                      <p className={s.commandDetailText}>{detail}</p>
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            ))}
+            <p className={s.commandDetailNote}>
+              В панели канала можно добавить свои команды вида <code className={s.code}>!имя</code> с переменными{" "}
+              <code className={s.code}>$(user)</code>, <code className={s.code}>$(query)</code> и уровнями доступа.
+            </p>
+          </div>
+        ) : null}
       </section>
 
       <footer className={s.footer}>
