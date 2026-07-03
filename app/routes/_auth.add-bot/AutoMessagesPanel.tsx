@@ -11,7 +11,6 @@ import {
   usePatchAutoMessageMutation,
 } from "~/api";
 import { PanelSkeleton } from "~/components/dashboard/PanelSkeleton";
-import { VariablesReference } from "~/features/commands/VariablesReference";
 import s from "./CustomCommandsPanel.module.css";
 
 type Props = {
@@ -236,7 +235,6 @@ export function AutoMessagesPanel({ channelId, subscribed }: Props) {
       <p className={s.lead}>
         Периодическая отправка текста в чат (1–1440 мин). Поддерживаются те же переменные, что у команд. Модуль «Авто-сообщения» в «Модули чата».
       </p>
-      <VariablesReference />
 
       {messages.length > 0 ? (
         <div className={s.list}>

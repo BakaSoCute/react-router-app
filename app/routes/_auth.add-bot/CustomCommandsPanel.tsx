@@ -13,7 +13,6 @@ import {
   usePreviewCustomCommandMutation,
 } from "~/api";
 import { PanelSkeleton } from "~/components/dashboard/PanelSkeleton";
-import { VariablesReference } from "~/features/commands/VariablesReference";
 import s from "./CustomCommandsPanel.module.css";
 
 type Props = {
@@ -414,7 +413,6 @@ export function CustomCommandsPanel({ channelId, subscribed }: Props) {
         Зрители пишут <code className={s.code}>!имя</code> в чат — бот отвечает заданным текстом. Работает даже при{" "}
         <code className={s.code}>!baka off</code>. Модуль включается в «Модули чата».
       </p>
-      <VariablesReference />
 
       {commands.length > 3 && (
         <label className={s.label}>

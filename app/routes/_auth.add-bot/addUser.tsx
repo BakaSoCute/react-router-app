@@ -18,6 +18,7 @@ import {
 } from "~/components/icons";
 import s from "./addUser.module.css";
 import { BotStatusPanel } from "./BotStatusPanel";
+import { VariablesReference } from "~/features/commands/VariablesReference";
 
 const ChatModulesPanel = lazy(() =>
   import("./ChatModulesPanel").then((m) => ({ default: m.ChatModulesPanel }))
@@ -403,6 +404,7 @@ export default function AddUser() {
         return isActivated
           ? renderLazyPanel(
               <>
+                <VariablesReference />
                 <CustomCommandsPanel channelId={channelId} subscribed={subscribed} />
                 <AutoMessagesPanel channelId={channelId} subscribed={subscribed} />
               </>
