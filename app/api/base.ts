@@ -49,6 +49,7 @@ export const API_TAG_TYPES = [
   "ChannelAiPrompt",
   "ChannelAiModel",
   "CustomCommands",
+  "AutoMessages",
   "Timers",
   "ClipsSettings",
   "ChannelEligibility",

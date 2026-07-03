@@ -175,6 +175,11 @@ export type CustomCommandItem = {
   cooldownSeconds: number;
   userLevel: CustomCommandUserLevel;
   useCount: number;
+  autoIntervalSeconds: number | null;
+  autoLiveOnly: boolean;
+  autoNextFireAt: number | null;
+  autoLastSentAt: number | null;
+  cooldownMessage: string | null;
 };
 
 export type CustomCommandsResponse = {
@@ -191,6 +196,40 @@ export type CustomCommandSingleResponse = {
 
 export const CUSTOM_COMMAND_RESPONSE_MAX = 450;
 export const CUSTOM_COMMANDS_MAX_PER_CHANNEL = 50;
+export const AUTO_INTERVAL_MIN_SECONDS = 60;
+export const AUTO_INTERVAL_MAX_SECONDS = 86400;
+export const AUTO_MESSAGES_MAX_PER_CHANNEL = 10;
+
+export type AutoMessageItem = {
+  id: number;
+  message: string;
+  intervalSeconds: number;
+  enabled: boolean;
+  liveOnly: boolean;
+  minChatLines: number;
+  lastSentAt: number | null;
+  nextFireAt: number;
+  useCount: number;
+};
+
+export type AutoMessagesResponse = {
+  success: boolean;
+  channelId: string;
+  messages: AutoMessageItem[];
+};
+
+export type AutoMessageSingleResponse = {
+  success: boolean;
+  channelId: string;
+  message: AutoMessageItem;
+};
+
+export type CustomCommandPreviewResponse = {
+  success: boolean;
+  channelId: string;
+  commandId: number;
+  preview: string;
+};
 
 export type ChannelEligibilityChecks = {
   isPartner: boolean;

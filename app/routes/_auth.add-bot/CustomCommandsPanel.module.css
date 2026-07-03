@@ -30,6 +30,112 @@
   font-family: var(--font-mono);
 }
 
+.varsBlock {
+  margin: 0 0 1rem;
+}
+
+.varsToggle {
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-soft);
+  background: var(--bg-row);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.varsDetails {
+  margin-top: 0.5rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--radius-sm);
+  background: var(--bg-row);
+  border: 1px solid var(--border-soft);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.varGroup {
+  margin-top: 0.5rem;
+}
+
+.varGroupTitle {
+  margin: 0 0 0.25rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.varList {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.varItem {
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.varItem:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.varItemHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0 0 0.2rem;
+}
+
+.varItemLabel {
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+}
+
+.varItemDesc {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.varItemExample {
+  margin: 0.25rem 0 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.varItemExample span {
+  font-family: var(--font-mono);
+  color: var(--text-code);
+}
+
+.previewRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.previewRow .input {
+  flex: 1;
+  min-width: 10rem;
+}
+
+.previewOut {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .vars {
   margin: 0 0 1rem;
   padding: 0.65rem 0.75rem;

@@ -31,6 +31,9 @@ const ChannelAiModelPanel = lazy(() =>
 const CustomCommandsPanel = lazy(() =>
   import("./CustomCommandsPanel").then((m) => ({ default: m.CustomCommandsPanel }))
 );
+const AutoMessagesPanel = lazy(() =>
+  import("./AutoMessagesPanel").then((m) => ({ default: m.AutoMessagesPanel }))
+);
 const TimersPanel = lazy(() =>
   import("./TimersPanel").then((m) => ({ default: m.TimersPanel }))
 );
@@ -398,7 +401,12 @@ export default function AddUser() {
           : null;
       case "commands":
         return isActivated
-          ? renderLazyPanel(<CustomCommandsPanel channelId={channelId} subscribed={subscribed} />)
+          ? renderLazyPanel(
+              <>
+                <CustomCommandsPanel channelId={channelId} subscribed={subscribed} />
+                <AutoMessagesPanel channelId={channelId} subscribed={subscribed} />
+              </>
+            )
           : null;
       case "timers":
         return isActivated

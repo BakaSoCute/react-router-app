@@ -10,8 +10,12 @@ import type {
   ClipsSettingsResponse,
   CustomCommandItem,
   CustomCommandSingleResponse,
+  CustomCommandPreviewResponse,
   CustomCommandUserLevel,
   CustomCommandsResponse,
+  AutoMessageItem,
+  AutoMessageSingleResponse,
+  AutoMessagesResponse,
   TimersResponse,
 } from "./types";
 
@@ -142,6 +146,9 @@ export const botSettingsEndpoints = (builder: ApiBuilder, getApi: ApiRef) => ({
       enabled?: boolean;
       cooldownSeconds?: number;
       userLevel?: CustomCommandUserLevel;
+      autoIntervalSeconds?: number | null;
+      autoLiveOnly?: boolean;
+      cooldownMessage?: string | null;
     }
   >({
     query: (body) => ({
@@ -162,6 +169,11 @@ export const botSettingsEndpoints = (builder: ApiBuilder, getApi: ApiRef) => ({
             cooldownSeconds: arg.cooldownSeconds ?? 0,
             userLevel: arg.userLevel ?? "everyone",
             useCount: 0,
+            autoIntervalSeconds: null,
+            autoLiveOnly: true,
+            autoNextFireAt: null,
+            autoLastSentAt: null,
+            cooldownMessage: null,
           });
         })
       );
@@ -188,6 +200,10 @@ export const botSettingsEndpoints = (builder: ApiBuilder, getApi: ApiRef) => ({
       enabled?: boolean;
       cooldownSeconds?: number;
       userLevel?: CustomCommandUserLevel;
+      autoIntervalSeconds?: number | null;
+      autoLiveOnly?: boolean;
+      cooldownMessage?: string | null;
+      resetUseCount?: boolean;
     }
   >({
     query: (body) => ({
@@ -206,6 +222,10 @@ export const botSettingsEndpoints = (builder: ApiBuilder, getApi: ApiRef) => ({
           if (arg.enabled !== undefined) cmd.enabled = arg.enabled;
           if (arg.cooldownSeconds !== undefined) cmd.cooldownSeconds = arg.cooldownSeconds;
           if (arg.userLevel !== undefined) cmd.userLevel = arg.userLevel;
+          if (arg.autoIntervalSeconds !== undefined) cmd.autoIntervalSeconds = arg.autoIntervalSeconds;
+          if (arg.autoLiveOnly !== undefined) cmd.autoLiveOnly = arg.autoLiveOnly;
+          if (arg.cooldownMessage !== undefined) cmd.cooldownMessage = arg.cooldownMessage;
+          if (arg.resetUseCount) cmd.useCount = 0;
         })
       );
       try {
@@ -243,6 +263,73 @@ export const botSettingsEndpoints = (builder: ApiBuilder, getApi: ApiRef) => ({
         patch.undo();
       }
     },
+  }),
+  previewCustomCommand: builder.mutation<
+    CustomCommandPreviewResponse,
+    { channelId: string; commandId: number; query?: string }
+  >({
+    query: (body) => ({
+      url: "/api/auth/railway/custom-commands/preview",
+      method: "POST",
+      body,
+    }),
+  }),
+  getAutoMessages: builder.query<AutoMessagesResponse, string>({
+    query: (channelId) => ({
+      url: "/api/auth/railway/auto-messages",
+      params: { channelId },
+    }),
+    keepUnusedDataFor: 120,
+    providesTags: (result) =>
+      result?.channelId ? [{ type: "AutoMessages", id: result.channelId }] : [],
+  }),
+  createAutoMessage: builder.mutation<
+    AutoMessageSingleResponse,
+    {
+      channelId: string;
+      message: string;
+      intervalSeconds: number;
+      enabled?: boolean;
+      liveOnly?: boolean;
+      minChatLines?: number;
+    }
+  >({
+    query: (body) => ({
+      url: "/api/auth/railway/auto-messages",
+      method: "POST",
+      body,
+    }),
+    invalidatesTags: (_r, _e, arg) => [{ type: "AutoMessages", id: arg.channelId }],
+  }),
+  patchAutoMessage: builder.mutation<
+    AutoMessageSingleResponse,
+    {
+      channelId: string;
+      messageId: number;
+      message?: string;
+      intervalSeconds?: number;
+      enabled?: boolean;
+      liveOnly?: boolean;
+      minChatLines?: number;
+    }
+  >({
+    query: (body) => ({
+      url: "/api/auth/railway/auto-messages",
+      method: "PATCH",
+      body,
+    }),
+    invalidatesTags: (_r, _e, arg) => [{ type: "AutoMessages", id: arg.channelId }],
+  }),
+  deleteAutoMessage: builder.mutation<
+    { success: boolean; channelId: string; messageId: number },
+    { channelId: string; messageId: number }
+  >({
+    query: (body) => ({
+      url: "/api/auth/railway/auto-messages",
+      method: "DELETE",
+      body,
+    }),
+    invalidatesTags: (_r, _e, arg) => [{ type: "AutoMessages", id: arg.channelId }],
   }),
   getChannelTimers: builder.query<TimersResponse, string>({
     query: (channelId) => ({

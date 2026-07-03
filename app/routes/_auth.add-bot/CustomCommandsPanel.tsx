@@ -1,5 +1,7 @@
 import { useState } from "react";
 import {
+  AUTO_INTERVAL_MAX_SECONDS,
+  AUTO_INTERVAL_MIN_SECONDS,
   CUSTOM_COMMAND_RESPONSE_MAX,
   CUSTOM_COMMANDS_MAX_PER_CHANNEL,
   type CustomCommandItem,
@@ -8,8 +10,10 @@ import {
   useDeleteCustomCommandMutation,
   useGetCustomCommandsQuery,
   usePatchCustomCommandMutation,
+  usePreviewCustomCommandMutation,
 } from "~/api";
 import { PanelSkeleton } from "~/components/dashboard/PanelSkeleton";
+import { VariablesReference } from "~/features/commands/VariablesReference";
 import s from "./CustomCommandsPanel.module.css";
 
 type Props = {
@@ -40,6 +44,18 @@ function levelLabel(level: CustomCommandUserLevel): string {
   return USER_LEVEL_OPTIONS.find((o) => o.value === level)?.label ?? level;
 }
 
+function minutesToSeconds(minutes: number): number | null {
+  if (!Number.isFinite(minutes)) return null;
+  const sec = Math.round(minutes * 60);
+  if (sec < AUTO_INTERVAL_MIN_SECONDS || sec > AUTO_INTERVAL_MAX_SECONDS) return null;
+  return sec;
+}
+
+function secondsToMinutes(sec: number | null): string {
+  if (sec == null || sec <= 0) return "";
+  return String(Math.round(sec / 60));
+}
+
 type CommandRowProps = {
   channelId: string;
   cmd: CustomCommandItem;
@@ -48,29 +64,47 @@ type CommandRowProps = {
 
 function CommandRow({ channelId, cmd, busy }: CommandRowProps) {
   const [editing, setEditing] = useState(false);
+  const [draftName, setDraftName] = useState(cmd.name);
   const [draftResponse, setDraftResponse] = useState(cmd.response);
   const [draftCooldown, setDraftCooldown] = useState(String(cmd.cooldownSeconds));
   const [draftLevel, setDraftLevel] = useState<CustomCommandUserLevel>(cmd.userLevel);
   const [draftEnabled, setDraftEnabled] = useState(cmd.enabled);
+  const [draftAutoEnabled, setDraftAutoEnabled] = useState(cmd.autoIntervalSeconds != null && cmd.autoIntervalSeconds > 0);
+  const [draftAutoMinutes, setDraftAutoMinutes] = useState(secondsToMinutes(cmd.autoIntervalSeconds));
+  const [draftAutoLiveOnly, setDraftAutoLiveOnly] = useState(cmd.autoLiveOnly);
+  const [draftCooldownMessage, setDraftCooldownMessage] = useState(cmd.cooldownMessage ?? "");
+  const [previewText, setPreviewText] = useState<string | null>(null);
+  const [previewQuery, setPreviewQuery] = useState("");
 
   const [patchCommand, patchState] = usePatchCustomCommandMutation();
   const [deleteCommand, deleteState] = useDeleteCustomCommandMutation();
+  const [previewCommand, previewState] = usePreviewCustomCommandMutation();
 
-  const rowBusy = busy || patchState.isLoading || deleteState.isLoading;
+  const rowBusy = busy || patchState.isLoading || deleteState.isLoading || previewState.isLoading;
 
   const handleSaveEdit = async () => {
     const cooldownSeconds = Number.parseInt(draftCooldown, 10);
     if (!Number.isFinite(cooldownSeconds)) return;
+    const autoIntervalSeconds = draftAutoEnabled
+      ? minutesToSeconds(Number.parseFloat(draftAutoMinutes))
+      : null;
+    if (draftAutoEnabled && autoIntervalSeconds == null) return;
+
     try {
       await patchCommand({
         channelId,
         commandId: cmd.id,
+        name: draftName.trim().replace(/^!+/, ""),
         response: draftResponse.trim(),
         cooldownSeconds,
         userLevel: draftLevel,
         enabled: draftEnabled,
+        autoIntervalSeconds,
+        autoLiveOnly: draftAutoLiveOnly,
+        cooldownMessage: draftCooldownMessage.trim() || null,
       }).unwrap();
       setEditing(false);
+      setPreviewText(null);
     } catch {
       /* RTK */
     }
@@ -97,6 +131,27 @@ function CommandRow({ channelId, cmd, busy }: CommandRowProps) {
     }
   };
 
+  const handleResetCount = async () => {
+    try {
+      await patchCommand({ channelId, commandId: cmd.id, resetUseCount: true }).unwrap();
+    } catch {
+      /* RTK */
+    }
+  };
+
+  const handlePreview = async () => {
+    try {
+      const result = await previewCommand({
+        channelId,
+        commandId: cmd.id,
+        query: previewQuery,
+      }).unwrap();
+      setPreviewText(result.preview);
+    } catch {
+      setPreviewText(null);
+    }
+  };
+
   return (
     <div className={s.row}>
       <div className={s.rowHead}>
@@ -107,6 +162,7 @@ function CommandRow({ channelId, cmd, busy }: CommandRowProps) {
           <p className={s.meta}>
             {cmd.enabled ? "Вкл" : "Выкл"} · cooldown {cmd.cooldownSeconds}с · {levelLabel(cmd.userLevel)} · вызовов:{" "}
             {cmd.useCount}
+            {cmd.autoIntervalSeconds ? ` · авто ${Math.round(cmd.autoIntervalSeconds / 60)} мин` : ""}
           </p>
         </div>
         <div className={s.rowActions}>
@@ -115,10 +171,16 @@ function CommandRow({ channelId, cmd, busy }: CommandRowProps) {
             className={s.btn}
             disabled={rowBusy || editing}
             onClick={() => {
+              setDraftName(cmd.name);
               setDraftResponse(cmd.response);
               setDraftCooldown(String(cmd.cooldownSeconds));
               setDraftLevel(cmd.userLevel);
               setDraftEnabled(cmd.enabled);
+              setDraftAutoEnabled(cmd.autoIntervalSeconds != null && cmd.autoIntervalSeconds > 0);
+              setDraftAutoMinutes(secondsToMinutes(cmd.autoIntervalSeconds));
+              setDraftAutoLiveOnly(cmd.autoLiveOnly);
+              setDraftCooldownMessage(cmd.cooldownMessage ?? "");
+              setPreviewText(null);
               setEditing(true);
             }}
           >
@@ -126,6 +188,9 @@ function CommandRow({ channelId, cmd, busy }: CommandRowProps) {
           </button>
           <button type="button" className={s.btn} disabled={rowBusy} onClick={() => void toggleEnabled()}>
             {cmd.enabled ? "Выключить" : "Включить"}
+          </button>
+          <button type="button" className={s.btn} disabled={rowBusy} onClick={() => void handleResetCount()}>
+            Сброс счётчика
           </button>
           <button type="button" className={`${s.btn} ${s.btnDanger}`} disabled={rowBusy} onClick={() => void handleDelete()}>
             Удалить
@@ -136,6 +201,16 @@ function CommandRow({ channelId, cmd, busy }: CommandRowProps) {
         <p className={s.responsePreview}>{cmd.response}</p>
       ) : (
         <div className={s.editBlock}>
+          <label className={s.label}>
+            Имя (без !)
+            <input
+              className={s.input}
+              value={draftName}
+              maxLength={32}
+              onChange={(e) => setDraftName(e.target.value)}
+              disabled={rowBusy}
+            />
+          </label>
           <label className={s.label}>
             Ответ
             <textarea
@@ -184,8 +259,68 @@ function CommandRow({ channelId, cmd, busy }: CommandRowProps) {
               />
             </label>
           </div>
+          <div className={s.formRow}>
+            <label className={s.label}>
+              <span>Авто-отправка</span>
+              <input
+                type="checkbox"
+                checked={draftAutoEnabled}
+                onChange={(e) => setDraftAutoEnabled(e.target.checked)}
+                disabled={rowBusy}
+              />
+            </label>
+            <label className={s.label}>
+              Интервал авто (мин)
+              <input
+                className={s.input}
+                type="number"
+                min={1}
+                max={1440}
+                value={draftAutoMinutes}
+                onChange={(e) => setDraftAutoMinutes(e.target.value)}
+                disabled={rowBusy || !draftAutoEnabled}
+              />
+            </label>
+            <label className={s.label}>
+              <span>Авто только в эфире</span>
+              <input
+                type="checkbox"
+                checked={draftAutoLiveOnly}
+                onChange={(e) => setDraftAutoLiveOnly(e.target.checked)}
+                disabled={rowBusy || !draftAutoEnabled}
+              />
+            </label>
+          </div>
+          <label className={s.label}>
+            Сообщение при cooldown (пусто = тихо)
+            <input
+              className={s.input}
+              value={draftCooldownMessage}
+              maxLength={CUSTOM_COMMAND_RESPONSE_MAX}
+              placeholder="Подожди $(remaining)с"
+              onChange={(e) => setDraftCooldownMessage(e.target.value)}
+              disabled={rowBusy}
+            />
+          </label>
+          <div className={s.previewRow}>
+            <input
+              className={s.input}
+              value={previewQuery}
+              placeholder="Текст для $(query) при тесте"
+              onChange={(e) => setPreviewQuery(e.target.value)}
+              disabled={rowBusy}
+            />
+            <button type="button" className={s.btn} disabled={rowBusy} onClick={() => void handlePreview()}>
+              Тест
+            </button>
+          </div>
+          {previewText != null && (
+            <p className={s.previewOut}>
+              <strong>Превью:</strong> {previewText}
+            </p>
+          )}
           <div className={s.rowActions}>
-            <button type="button" className={s.submit} disabled={rowBusy || !draftResponse.trim()} onClick={() => void handleSaveEdit()}>
+            <button type="button" className={s.submit} disabled={rowBusy || !draftResponse.trim() || !draftName.trim()} onClick={() => void handleSaveEdit()}>
               Сохранить
             </button>
             <button type="button" className={s.btn} disabled={rowBusy} onClick={() => setEditing(false)}>
@@ -213,8 +348,12 @@ export function CustomCommandsPanel({ channelId, subscribed }: Props) {
   const [newResponse, setNewResponse] = useState("");
   const [newCooldown, setNewCooldown] = useState("5");
   const [newLevel, setNewLevel] = useState<CustomCommandUserLevel>("everyone");
+  const [search, setSearch] = useState("");
 
   const commands = data?.commands ?? [];
+  const filtered = search.trim()
+    ? commands.filter((c) => c.name.includes(search.trim().toLowerCase()))
+    : commands;
   const atLimit = commands.length >= CUSTOM_COMMANDS_MAX_PER_CHANNEL;
   const formBusy = createState.isLoading;
 
@@ -273,18 +412,20 @@ export function CustomCommandsPanel({ channelId, subscribed }: Props) {
       <h2 className={s.title}>Кастомные команды</h2>
       <p className={s.lead}>
         Зрители пишут <code className={s.code}>!имя</code> в чат — бот отвечает заданным текстом. Работает даже при{" "}
-        <code className={s.code}>!baka off</code>. Имена <code className={s.code}>baka</code> и похожие зарезервированы.
-        Включение модуля — в блоке «Модули чата».
+        <code className={s.code}>!baka off</code>. Модуль включается в «Модули чата».
       </p>
-      <p className={s.vars}>
-        Переменные: <code className={s.code}>$(user)</code>, <code className={s.code}>$(channel)</code>,{" "}
-        <code className={s.code}>$(query)</code> (текст после команды), <code className={s.code}>$(count)</code>,{" "}
-        <code className={s.code}>$(random 1 100)</code>
-      </p>
+      <VariablesReference />
 
-      {commands.length > 0 ? (
+      {commands.length > 3 && (
+        <label className={s.label}>
+          Поиск
+          <input className={s.input} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="имя команды" />
+        </label>
+      )}
+
+      {filtered.length > 0 ? (
         <div className={s.list}>
-          {commands.map((cmd) => (
+          {filtered.map((cmd) => (
             <CommandRow key={cmd.id} channelId={channelId} cmd={cmd} busy={formBusy} />
           ))}
         </div>
