@@ -7,8 +7,8 @@
 }
 
 .title {
-  margin: 0 0 1rem;
-  font-size: 2rem;
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--text-primary);
 }
@@ -61,7 +61,8 @@
 }
 
 .varGroupTitle {
-  margin: 0 0 0.25rem;
+  margin: 1rem 0 1rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: var(--text-secondary);
 }

@@ -1,7 +1,10 @@
 import { useState } from "react";
 import s from "~/routes/_auth.add-bot/CustomCommandsPanel.module.css";
-import { COMMAND_VARIABLE_GROUPS } from "./commandVariables";
-
+import {
+  COMMAND_VARIABLE_GROUPS,
+  type CommandVariableGroup,
+  type CommandVariableItem,
+} from "~/features/commands/commandVariables";
 export function VariablesReference() {
   const [open, setOpen] = useState(false);
 
@@ -18,12 +21,11 @@ export function VariablesReference() {
             пустые — нет того, кто вызвал команду. Список зрителей для <code className={s.code}>$(randomuser)</code>{" "}
             собирается за текущий эфир и сбрасывается после окончания стрима.
           </p>
-          {COMMAND_VARIABLE_GROUPS.map((group) => (
+          {COMMAND_VARIABLE_GROUPS.map((group: CommandVariableGroup) => (
             <div key={group.title} className={s.varGroup}>
               <p className={s.varGroupTitle}>{group.title}</p>
               <ul className={s.varList}>
-                {group.items.map((item) => (
-                  <li key={item.code} className={s.varItem}>
+                {group.items.map((item: CommandVariableItem) => (                  <li key={item.code} className={s.varItem}>
                     <p className={s.varItemHead}>
                       <code className={s.code}>{item.code}</code>
                       <span className={s.varItemLabel}>{item.label}</span>
