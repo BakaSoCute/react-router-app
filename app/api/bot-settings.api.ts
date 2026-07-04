@@ -8,10 +8,17 @@ import type {
   ChatModuleItem,
   ChatModulesResponse,
   ClipsSettingsResponse,
+  ModerationSettingsResponse,
+  ModerationStrictness,
+  BlockedUsersResponse,
+  BlockedUserItem,
+  ModerationLogResponse,
   CustomCommandItem,
   CustomCommandSingleResponse,
   CustomCommandPreviewResponse,
   CustomCommandUserLevel,
+  CommandResponseType,
+  AutoResponseType,
   CustomCommandsResponse,
   AutoMessageItem,
   AutoMessageSingleResponse,
@@ -149,6 +156,8 @@ export const botSettingsEndpoints = (builder: ApiBuilder, getApi: ApiRef) => ({
       autoIntervalSeconds?: number | null;
       autoLiveOnly?: boolean;
       cooldownMessage?: string | null;
+      responseType?: CommandResponseType;
+      autoResponseType?: AutoResponseType;
     }
   >({
     query: (body) => ({
@@ -174,6 +183,8 @@ export const botSettingsEndpoints = (builder: ApiBuilder, getApi: ApiRef) => ({
             autoNextFireAt: null,
             autoLastSentAt: null,
             cooldownMessage: null,
+            responseType: arg.responseType ?? "reply",
+            autoResponseType: arg.autoResponseType ?? "chat",
           });
         })
       );
@@ -204,6 +215,8 @@ export const botSettingsEndpoints = (builder: ApiBuilder, getApi: ApiRef) => ({
       autoLiveOnly?: boolean;
       cooldownMessage?: string | null;
       resetUseCount?: boolean;
+      responseType?: CommandResponseType;
+      autoResponseType?: AutoResponseType;
     }
   >({
     query: (body) => ({
@@ -225,6 +238,8 @@ export const botSettingsEndpoints = (builder: ApiBuilder, getApi: ApiRef) => ({
           if (arg.autoIntervalSeconds !== undefined) cmd.autoIntervalSeconds = arg.autoIntervalSeconds;
           if (arg.autoLiveOnly !== undefined) cmd.autoLiveOnly = arg.autoLiveOnly;
           if (arg.cooldownMessage !== undefined) cmd.cooldownMessage = arg.cooldownMessage;
+          if (arg.responseType !== undefined) cmd.responseType = arg.responseType;
+          if (arg.autoResponseType !== undefined) cmd.autoResponseType = arg.autoResponseType;
           if (arg.resetUseCount) cmd.useCount = 0;
         })
       );
@@ -292,6 +307,7 @@ export const botSettingsEndpoints = (builder: ApiBuilder, getApi: ApiRef) => ({
       enabled?: boolean;
       liveOnly?: boolean;
       minChatLines?: number;
+      responseType?: AutoResponseType;
     }
   >({
     query: (body) => ({
@@ -311,6 +327,7 @@ export const botSettingsEndpoints = (builder: ApiBuilder, getApi: ApiRef) => ({
       enabled?: boolean;
       liveOnly?: boolean;
       minChatLines?: number;
+      responseType?: AutoResponseType;
     }
   >({
     query: (body) => ({
@@ -427,5 +444,81 @@ export const botSettingsEndpoints = (builder: ApiBuilder, getApi: ApiRef) => ({
         patch.undo();
       }
     },
+  }),
+  getModerationSettings: builder.query<ModerationSettingsResponse, string>({
+    query: (channelId) => ({
+      url: "/api/auth/railway/moderation/settings",
+      params: { channelId },
+    }),
+    keepUnusedDataFor: 120,
+    providesTags: (result) =>
+      result?.channelId ? [{ type: "ModerationSettings", id: result.channelId }] : [],
+  }),
+  patchModerationSettings: builder.mutation<
+    ModerationSettingsResponse,
+    {
+      channelId: string;
+      defaultTimeoutSeconds?: number;
+      cooldownSeconds?: number;
+      strictness?: ModerationStrictness;
+      customRules?: string | null;
+      vipExempt?: boolean;
+    }
+  >({
+    query: (body) => ({
+      url: "/api/auth/railway/moderation/settings",
+      method: "PATCH",
+      body,
+    }),
+    invalidatesTags: (_result, _err, arg) => [{ type: "ModerationSettings", id: arg.channelId }],
+  }),
+  getBlockedUsers: builder.query<BlockedUsersResponse, string>({
+    query: (channelId) => ({
+      url: "/api/auth/railway/blocked-users",
+      params: { channelId },
+    }),
+    keepUnusedDataFor: 120,
+    providesTags: (result) =>
+      result?.channelId ? [{ type: "BlockedUsers", id: result.channelId }] : [],
+  }),
+  addBlockedUser: builder.mutation<
+    { success: boolean; channelId: string; user: BlockedUserItem },
+    { channelId: string; login: string; reason?: string | null }
+  >({
+    query: (body) => ({
+      url: "/api/auth/railway/blocked-users",
+      method: "POST",
+      body,
+    }),
+    invalidatesTags: (_result, _err, arg) => [
+      { type: "BlockedUsers", id: arg.channelId },
+      { type: "ModerationLog", id: arg.channelId },
+    ],
+  }),
+  removeBlockedUser: builder.mutation<
+    { success: boolean; channelId: string; userId: string },
+    { channelId: string; userId: string }
+  >({
+    query: (body) => ({
+      url: "/api/auth/railway/blocked-users",
+      method: "DELETE",
+      body,
+    }),
+    invalidatesTags: (_result, _err, arg) => [
+      { type: "BlockedUsers", id: arg.channelId },
+      { type: "ModerationLog", id: arg.channelId },
+    ],
+  }),
+  getModerationLog: builder.query<
+    ModerationLogResponse,
+    { channelId: string; limit?: number; offset?: number }
+  >({
+    query: ({ channelId, limit = 50, offset = 0 }) => ({
+      url: "/api/auth/railway/moderation/log",
+      params: { channelId, limit, offset },
+    }),
+    keepUnusedDataFor: 60,
+    providesTags: (result) =>
+      result?.channelId ? [{ type: "ModerationLog", id: result.channelId }] : [],
   }),
 });

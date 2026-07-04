@@ -1,11 +1,15 @@
 import s from "./css/Login.module.css";
 import { IconTwitch } from "~/components/icons";
-import { getBackendUrl } from "~/lib/backend-url";
+import { redirectToTwitchLogin } from "~/lib/twitch-login";
+import { useState } from "react";
 
 export const Login = () => {
+  const [isPending, setIsPending] = useState(false);
+
   const handleSubmit = () => {
-    const origin = encodeURIComponent(window.location.origin);
-        window.location.href = `${getBackendUrl()}/api/auth/twitch?origin=${origin}`;;
+    if (isPending) return;
+    setIsPending(true);
+    redirectToTwitchLogin();
   };
 
   return (
@@ -15,9 +19,9 @@ export const Login = () => {
         <p className={s.text}>
           Авторизуйтесь через Twitch, чтобы подключать бота к каналу, управлять статусом и настройками.
         </p>
-        <button className={s.button} type="button" onClick={handleSubmit}>
+        <button className={s.button} type="button" disabled={isPending} aria-busy={isPending} onClick={handleSubmit}>
           <IconTwitch size={20} />
-          Войти через Twitch
+          {isPending ? "Перенаправление…" : "Войти через Twitch"}
         </button>
       </section>
     </main>

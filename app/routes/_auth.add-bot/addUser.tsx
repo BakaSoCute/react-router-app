@@ -14,6 +14,7 @@ import {
   IconCommand,
   IconModule,
   IconPlug,
+  IconShield,
   IconTimer,
 } from "~/components/icons";
 import s from "./addUser.module.css";
@@ -41,16 +42,20 @@ const TimersPanel = lazy(() =>
 const ClipsPanel = lazy(() =>
   import("./ClipsPanel").then((m) => ({ default: m.ClipsPanel }))
 );
+const ModerationPanel = lazy(() =>
+  import("./ModerationPanel").then((m) => ({ default: m.ModerationPanel }))
+);
 
 function renderLazyPanel(panel: ReactNode) {
   return <Suspense fallback={null}>{panel}</Suspense>;
 }
 
-type SectionId = "overview" | "modules" | "ai-prompt" | "ai-model" | "commands" | "timers" | "clips";
+type SectionId = "overview" | "modules" | "ai-prompt" | "ai-model" | "commands" | "timers" | "clips" | "moderation";
 
 const NAV = [
   { id: "overview" as const, label: "Обзор", icon: <IconPlug size={16} /> },
   { id: "modules" as const, label: "Модули", icon: <IconModule size={16} /> },
+  { id: "moderation" as const, label: "Модерация", icon: <IconShield size={16} /> },
   { id: "ai-prompt" as const, label: "AI-промт", icon: <IconBrain size={16} /> },
   { id: "ai-model" as const, label: "AI-модель", icon: <IconBrain size={16} /> },
   { id: "commands" as const, label: "Команды", icon: <IconCommand size={16} /> },
@@ -417,6 +422,10 @@ export default function AddUser() {
       case "clips":
         return isActivated
           ? renderLazyPanel(<ClipsPanel channelId={channelId} subscribed={subscribed} />)
+          : null;
+      case "moderation":
+        return isActivated
+          ? renderLazyPanel(<ModerationPanel channelId={channelId} subscribed={subscribed} />)
           : null;
     }
   };

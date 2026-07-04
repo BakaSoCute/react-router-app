@@ -1,11 +1,10 @@
 import { useState } from "react";
 import {
-  AUTO_INTERVAL_MAX_SECONDS,
-  AUTO_INTERVAL_MIN_SECONDS,
   CUSTOM_COMMAND_RESPONSE_MAX,
   CUSTOM_COMMANDS_MAX_PER_CHANNEL,
   type CustomCommandItem,
   type CustomCommandUserLevel,
+  type CommandResponseType,
   useCreateCustomCommandMutation,
   useDeleteCustomCommandMutation,
   useGetCustomCommandsQuery,
@@ -27,6 +26,16 @@ const USER_LEVEL_OPTIONS: { value: CustomCommandUserLevel; label: string }[] = [
   { value: "broadcaster", label: "Только стример" },
 ];
 
+const COMMAND_RESPONSE_TYPE_OPTIONS: { value: CommandResponseType; label: string }[] = [
+  { value: "reply", label: "Ответ на сообщение" },
+  { value: "chat", label: "Сообщение в чат" },
+  { value: "announcement", label: "Announcement в чате" },
+];
+
+function responseTypeLabel(type: CommandResponseType): string {
+  return COMMAND_RESPONSE_TYPE_OPTIONS.find((o) => o.value === type)?.label ?? type;
+}
+
 function pickFetchError(error: unknown): string {
   if (error && typeof error === "object" && "data" in error) {
     const data = (error as { data?: unknown }).data;
@@ -43,18 +52,6 @@ function levelLabel(level: CustomCommandUserLevel): string {
   return USER_LEVEL_OPTIONS.find((o) => o.value === level)?.label ?? level;
 }
 
-function minutesToSeconds(minutes: number): number | null {
-  if (!Number.isFinite(minutes)) return null;
-  const sec = Math.round(minutes * 60);
-  if (sec < AUTO_INTERVAL_MIN_SECONDS || sec > AUTO_INTERVAL_MAX_SECONDS) return null;
-  return sec;
-}
-
-function secondsToMinutes(sec: number | null): string {
-  if (sec == null || sec <= 0) return "";
-  return String(Math.round(sec / 60));
-}
-
 type CommandRowProps = {
   channelId: string;
   cmd: CustomCommandItem;
@@ -68,10 +65,8 @@ function CommandRow({ channelId, cmd, busy }: CommandRowProps) {
   const [draftCooldown, setDraftCooldown] = useState(String(cmd.cooldownSeconds));
   const [draftLevel, setDraftLevel] = useState<CustomCommandUserLevel>(cmd.userLevel);
   const [draftEnabled, setDraftEnabled] = useState(cmd.enabled);
-  const [draftAutoEnabled, setDraftAutoEnabled] = useState(cmd.autoIntervalSeconds != null && cmd.autoIntervalSeconds > 0);
-  const [draftAutoMinutes, setDraftAutoMinutes] = useState(secondsToMinutes(cmd.autoIntervalSeconds));
-  const [draftAutoLiveOnly, setDraftAutoLiveOnly] = useState(cmd.autoLiveOnly);
   const [draftCooldownMessage, setDraftCooldownMessage] = useState(cmd.cooldownMessage ?? "");
+  const [draftResponseType, setDraftResponseType] = useState<CommandResponseType>(cmd.responseType ?? "reply");
   const [previewText, setPreviewText] = useState<string | null>(null);
   const [previewQuery, setPreviewQuery] = useState("");
 
@@ -84,10 +79,6 @@ function CommandRow({ channelId, cmd, busy }: CommandRowProps) {
   const handleSaveEdit = async () => {
     const cooldownSeconds = Number.parseInt(draftCooldown, 10);
     if (!Number.isFinite(cooldownSeconds)) return;
-    const autoIntervalSeconds = draftAutoEnabled
-      ? minutesToSeconds(Number.parseFloat(draftAutoMinutes))
-      : null;
-    if (draftAutoEnabled && autoIntervalSeconds == null) return;
 
     try {
       await patchCommand({
@@ -98,9 +89,8 @@ function CommandRow({ channelId, cmd, busy }: CommandRowProps) {
         cooldownSeconds,
         userLevel: draftLevel,
         enabled: draftEnabled,
-        autoIntervalSeconds,
-        autoLiveOnly: draftAutoLiveOnly,
         cooldownMessage: draftCooldownMessage.trim() || null,
+        responseType: draftResponseType,
       }).unwrap();
       setEditing(false);
       setPreviewText(null);
@@ -159,9 +149,8 @@ function CommandRow({ channelId, cmd, busy }: CommandRowProps) {
             <code className={s.code}>!{cmd.name}</code>
           </p>
           <p className={s.meta}>
-            {cmd.enabled ? "Вкл" : "Выкл"} · cooldown {cmd.cooldownSeconds}с · {levelLabel(cmd.userLevel)} · вызовов:{" "}
-            {cmd.useCount}
-            {cmd.autoIntervalSeconds ? ` · авто ${Math.round(cmd.autoIntervalSeconds / 60)} мин` : ""}
+            {cmd.enabled ? "Вкл" : "Выкл"} · cooldown {cmd.cooldownSeconds}с · {levelLabel(cmd.userLevel)} ·{" "}
+            {responseTypeLabel(cmd.responseType ?? "reply")} · вызовов: {cmd.useCount}
           </p>
         </div>
         <div className={s.rowActions}>
@@ -175,10 +164,8 @@ function CommandRow({ channelId, cmd, busy }: CommandRowProps) {
               setDraftCooldown(String(cmd.cooldownSeconds));
               setDraftLevel(cmd.userLevel);
               setDraftEnabled(cmd.enabled);
-              setDraftAutoEnabled(cmd.autoIntervalSeconds != null && cmd.autoIntervalSeconds > 0);
-              setDraftAutoMinutes(secondsToMinutes(cmd.autoIntervalSeconds));
-              setDraftAutoLiveOnly(cmd.autoLiveOnly);
               setDraftCooldownMessage(cmd.cooldownMessage ?? "");
+              setDraftResponseType(cmd.responseType ?? "reply");
               setPreviewText(null);
               setEditing(true);
             }}
@@ -257,37 +244,20 @@ function CommandRow({ channelId, cmd, busy }: CommandRowProps) {
                 disabled={rowBusy}
               />
             </label>
-          </div>
-          <div className={s.formRow}>
             <label className={s.label}>
-              <span>Авто-отправка</span>
-              <input
-                type="checkbox"
-                checked={draftAutoEnabled}
-                onChange={(e) => setDraftAutoEnabled(e.target.checked)}
+              Тип ответа
+              <select
+                className={s.select}
+                value={draftResponseType}
+                onChange={(e) => setDraftResponseType(e.target.value as CommandResponseType)}
                 disabled={rowBusy}
-              />
-            </label>
-            <label className={s.label}>
-              Интервал авто (мин)
-              <input
-                className={s.input}
-                type="number"
-                min={1}
-                max={1440}
-                value={draftAutoMinutes}
-                onChange={(e) => setDraftAutoMinutes(e.target.value)}
-                disabled={rowBusy || !draftAutoEnabled}
-              />
-            </label>
-            <label className={s.label}>
-              <span>Авто только в эфире</span>
-              <input
-                type="checkbox"
-                checked={draftAutoLiveOnly}
-                onChange={(e) => setDraftAutoLiveOnly(e.target.checked)}
-                disabled={rowBusy || !draftAutoEnabled}
-              />
+              >
+                {COMMAND_RESPONSE_TYPE_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
             </label>
           </div>
           <label className={s.label}>
@@ -347,6 +317,7 @@ export function CustomCommandsPanel({ channelId, subscribed }: Props) {
   const [newResponse, setNewResponse] = useState("");
   const [newCooldown, setNewCooldown] = useState("5");
   const [newLevel, setNewLevel] = useState<CustomCommandUserLevel>("everyone");
+  const [newResponseType, setNewResponseType] = useState<CommandResponseType>("reply");
   const [search, setSearch] = useState("");
 
   const commands = data?.commands ?? [];
@@ -369,11 +340,13 @@ export function CustomCommandsPanel({ channelId, subscribed }: Props) {
         cooldownSeconds,
         userLevel: newLevel,
         enabled: true,
+        responseType: newResponseType,
       }).unwrap();
       setNewName("");
       setNewResponse("");
       setNewCooldown("5");
       setNewLevel("everyone");
+      setNewResponseType("reply");
     } catch {
       /* RTK */
     }
@@ -478,6 +451,21 @@ export function CustomCommandsPanel({ channelId, subscribed }: Props) {
                 disabled={formBusy}
               >
                 {USER_LEVEL_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className={s.label}>
+              Тип ответа
+              <select
+                className={s.select}
+                value={newResponseType}
+                onChange={(e) => setNewResponseType(e.target.value as CommandResponseType)}
+                disabled={formBusy}
+              >
+                {COMMAND_RESPONSE_TYPE_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>
                     {o.label}
                   </option>

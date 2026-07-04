@@ -2,6 +2,7 @@ import type { Route } from "./+types/_index";
 import { useState } from "react";
 import { Link } from "react-router";
 import { useAuth } from "~/hooks/useAuth";
+import { redirectToTwitchLogin } from "~/lib/twitch-login";
 import { IconBot, IconBrain, IconCommand, IconSparkle, IconTimer, IconTwitch } from "~/components/icons";
 import s from "../styles/index-page.module.css";
 
@@ -96,8 +97,17 @@ const COMMAND_DETAILS = [
 ] as const;
 
 export default function mainPage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isBootstrapping } = useAuth();
   const [commandsExpanded, setCommandsExpanded] = useState(false);
+  const [isLoginPending, setIsLoginPending] = useState(false);
+
+  const loginBusy = isBootstrapping || isLoginPending;
+
+  const handleLogin = () => {
+    if (loginBusy) return;
+    setIsLoginPending(true);
+    redirectToTwitchLogin();
+  };
 
   return (
     <main className={s.wrap}>
@@ -125,10 +135,16 @@ export default function mainPage() {
                 </Link>
               </>
             ) : (
-              <Link className={s.ctaPrimary} to="/login">
+              <button
+                type="button"
+                className={s.ctaPrimary}
+                disabled={loginBusy}
+                aria-busy={loginBusy}
+                onClick={handleLogin}
+              >
                 <IconTwitch size={18} />
-                Войти через Twitch
-              </Link>
+                {isBootstrapping ? "Проверка сессии…" : isLoginPending ? "Перенаправление…" : "Войти через Twitch"}
+              </button>
             )}
           </div>
         </div>
@@ -235,7 +251,6 @@ export default function mainPage() {
       </section>
 
       <footer className={s.footer}>
-        <p>Разработчик: BakaSoCute</p>
         <p>
           Вопросы и предложения —{" "}
           <a href="https://t.me/bakasocute" className={s.footerLink} target="_blank" rel="noreferrer">

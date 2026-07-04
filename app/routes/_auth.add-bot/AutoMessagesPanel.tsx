@@ -5,6 +5,7 @@ import {
   AUTO_MESSAGES_MAX_PER_CHANNEL,
   CUSTOM_COMMAND_RESPONSE_MAX,
   type AutoMessageItem,
+  type AutoResponseType,
   useCreateAutoMessageMutation,
   useDeleteAutoMessageMutation,
   useGetAutoMessagesQuery,
@@ -30,6 +31,15 @@ function pickFetchError(error: unknown): string {
   return "Ошибка запроса";
 }
 
+const AUTO_RESPONSE_TYPE_OPTIONS: { value: AutoResponseType; label: string }[] = [
+  { value: "chat", label: "Сообщение в чат" },
+  { value: "announcement", label: "Announcement в чате" },
+];
+
+function autoResponseTypeLabel(type: AutoResponseType): string {
+  return AUTO_RESPONSE_TYPE_OPTIONS.find((o) => o.value === type)?.label ?? type;
+}
+
 function minutesToSeconds(minutes: number): number | null {
   if (!Number.isFinite(minutes)) return null;
   const sec = Math.round(minutes * 60);
@@ -50,6 +60,7 @@ function MessageRow({ channelId, item, busy }: MessageRowProps) {
   const [draftEnabled, setDraftEnabled] = useState(item.enabled);
   const [draftLiveOnly, setDraftLiveOnly] = useState(item.liveOnly);
   const [draftMinLines, setDraftMinLines] = useState(String(item.minChatLines));
+  const [draftResponseType, setDraftResponseType] = useState<AutoResponseType>(item.responseType ?? "chat");
 
   const [patchMessage, patchState] = usePatchAutoMessageMutation();
   const [deleteMessage, deleteState] = useDeleteAutoMessageMutation();
@@ -68,6 +79,7 @@ function MessageRow({ channelId, item, busy }: MessageRowProps) {
         enabled: draftEnabled,
         liveOnly: draftLiveOnly,
         minChatLines,
+        responseType: draftResponseType,
       }).unwrap();
       setEditing(false);
     } catch {
@@ -100,10 +112,19 @@ function MessageRow({ channelId, item, busy }: MessageRowProps) {
             {item.enabled ? "Вкл" : "Выкл"} · каждые {Math.round(item.intervalSeconds / 60)} мин · отправок: {item.useCount}
             {item.liveOnly ? " · только в эфире" : ""}
             {item.minChatLines > 0 ? ` · мин. ${item.minChatLines} сообщ. в чате` : ""}
+            {` · ${autoResponseTypeLabel(item.responseType ?? "chat")}`}
           </p>
         </div>
         <div className={s.rowActions}>
-          <button type="button" className={s.btn} disabled={rowBusy || editing} onClick={() => setEditing(true)}>
+          <button type="button" className={s.btn} disabled={rowBusy || editing} onClick={() => {
+            setDraftMessage(item.message);
+            setDraftMinutes(String(Math.round(item.intervalSeconds / 60)));
+            setDraftEnabled(item.enabled);
+            setDraftLiveOnly(item.liveOnly);
+            setDraftMinLines(String(item.minChatLines));
+            setDraftResponseType(item.responseType ?? "chat");
+            setEditing(true);
+          }}>
             Изменить
           </button>
           <button type="button" className={s.btn} disabled={rowBusy} onClick={() => void toggle()}>
@@ -162,6 +183,21 @@ function MessageRow({ channelId, item, busy }: MessageRowProps) {
               <input type="checkbox" checked={draftLiveOnly} onChange={(e) => setDraftLiveOnly(e.target.checked)} disabled={rowBusy} />
             </label>
           </div>
+          <label className={s.label}>
+            Тип отправки
+            <select
+              className={s.select}
+              value={draftResponseType}
+              onChange={(e) => setDraftResponseType(e.target.value as AutoResponseType)}
+              disabled={rowBusy}
+            >
+              {AUTO_RESPONSE_TYPE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </label>
           <div className={s.rowActions}>
             <button type="button" className={s.submit} disabled={rowBusy || !draftMessage.trim()} onClick={() => void save()}>
               Сохранить
@@ -186,6 +222,7 @@ export function AutoMessagesPanel({ channelId, subscribed }: Props) {
   const [newMinutes, setNewMinutes] = useState("15");
   const [newLiveOnly, setNewLiveOnly] = useState(true);
   const [newMinLines, setNewMinLines] = useState("0");
+  const [newResponseType, setNewResponseType] = useState<AutoResponseType>("chat");
 
   const messages = data?.messages ?? [];
   const atLimit = messages.length >= AUTO_MESSAGES_MAX_PER_CHANNEL;
@@ -203,6 +240,7 @@ export function AutoMessagesPanel({ channelId, subscribed }: Props) {
         enabled: true,
         liveOnly: newLiveOnly,
         minChatLines,
+        responseType: newResponseType,
       }).unwrap();
       setNewMessage("");
       setNewMinutes("15");
@@ -271,6 +309,20 @@ export function AutoMessagesPanel({ channelId, subscribed }: Props) {
             <label className={s.label}>
               <span>Только в эфире</span>
               <input type="checkbox" checked={newLiveOnly} onChange={(e) => setNewLiveOnly(e.target.checked)} />
+            </label>
+            <label className={s.label}>
+              Тип отправки
+              <select
+                className={s.select}
+                value={newResponseType}
+                onChange={(e) => setNewResponseType(e.target.value as AutoResponseType)}
+              >
+                {AUTO_RESPONSE_TYPE_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
             </label>
           </div>
           <button type="button" className={s.submit} disabled={createState.isLoading || !newMessage.trim()} onClick={() => void handleCreate()}>

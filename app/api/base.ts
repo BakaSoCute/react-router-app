@@ -52,6 +52,9 @@ export const API_TAG_TYPES = [
   "AutoMessages",
   "Timers",
   "ClipsSettings",
+  "ModerationSettings",
+  "BlockedUsers",
+  "ModerationLog",
   "ChannelEligibility",
   "Admin",
 ] as const;

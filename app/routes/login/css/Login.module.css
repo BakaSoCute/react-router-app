@@ -58,7 +58,14 @@
   transition: filter var(--transition-fast), transform var(--transition-fast);
 }
 
-.button:hover {
+.button:hover:not(:disabled) {
   filter: brightness(1.1);
   transform: translateY(-1px);
+}
+
+.button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+  filter: none;
 }

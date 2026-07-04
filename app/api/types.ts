@@ -101,6 +101,54 @@ export type ClipsSettingsResponse = {
   cooldownSeconds: number;
 };
 
+export type ModerationStrictness = "low" | "medium" | "high";
+
+export type ModerationSettingsResponse = {
+  success: boolean;
+  channelId: string;
+  defaultTimeoutSeconds: number;
+  cooldownSeconds: number;
+  strictness: ModerationStrictness;
+  customRules: string | null;
+  vipExempt: boolean;
+};
+
+export type BlockedUserItem = {
+  id: number;
+  userId: string;
+  userLogin: string;
+  reason: string | null;
+  blockedBy: string | null;
+  blockedAt: string;
+};
+
+export type BlockedUsersResponse = {
+  success: boolean;
+  channelId: string;
+  users: BlockedUserItem[];
+};
+
+export type ModerationLogItem = {
+  id: number;
+  userId: string;
+  userLogin: string;
+  action: "timeout" | "block" | "unblock" | string;
+  reason: string | null;
+  durationSeconds: number | null;
+  source: "ai" | "manual" | string;
+  createdAt: string;
+};
+
+export type ModerationLogResponse = {
+  success: boolean;
+  channelId: string;
+  entries: ModerationLogItem[];
+  limit: number;
+  offset: number;
+};
+
+export const MODERATION_CUSTOM_RULES_MAX = 2000;
+
 export type ManagedChannel = {
   id: string;
   login: string;
@@ -167,6 +215,9 @@ export type ChannelAiModelResponse = {
 
 export const CHANNEL_AI_PROMPT_MAX_CHARS = 4000;
 
+export type CommandResponseType = "reply" | "chat" | "announcement";
+export type AutoResponseType = "chat" | "announcement";
+
 export type CustomCommandItem = {
   id: number;
   name: string;
@@ -180,6 +231,8 @@ export type CustomCommandItem = {
   autoNextFireAt: number | null;
   autoLastSentAt: number | null;
   cooldownMessage: string | null;
+  responseType: CommandResponseType;
+  autoResponseType: AutoResponseType;
 };
 
 export type CustomCommandsResponse = {
@@ -210,6 +263,7 @@ export type AutoMessageItem = {
   lastSentAt: number | null;
   nextFireAt: number;
   useCount: number;
+  responseType: AutoResponseType;
 };
 
 export type AutoMessagesResponse = {

@@ -88,9 +88,16 @@
   box-shadow: var(--shadow-neon);
 }
 
-.ctaPrimary:hover {
+.ctaPrimary:hover:not(:disabled) {
   filter: brightness(1.1);
   transform: translateY(-1px);
+}
+
+.ctaPrimary:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+  filter: none;
 }
 
 .ctaGhost {
