@@ -1,11 +1,13 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   useAddBotToChannelMutation,
+  useGetBotChannelStatusQuery,
   useGetDashboardBootstrapQuery,
   useRemoveBotFromChannelMutation,
   type ChannelEligibilityResponse,
 } from "~/api/api";
 import { useAuth } from "~/hooks/useAuth";
+import { pickApiErrorMessage } from "~/lib/api-error-message";
 import { perfMark, perfMeasure } from "~/lib/perf";
 import { DashboardLayout } from "~/components/dashboard/DashboardLayout";
 import {
@@ -82,11 +84,9 @@ function pickErrorMessage(error: unknown): string {
       if (d.code === "channel_not_eligible" && d.eligibility?.failureReasons?.length) {
         return d.eligibility.failureReasons.join(" ");
       }
-      if (d.message) return String(d.message);
-      if (d.error) return String(d.error);
     }
   }
-  return "Ошибка запроса";
+  return pickApiErrorMessage(error);
 }
 
 function broadcasterTypeLabel(t: ChannelEligibilityResponse["broadcasterType"]): string {
@@ -105,7 +105,7 @@ export default function AddUser() {
     perfMark("channels_page_start");
   }, []);
 
-  const { data: bootstrap, isLoading: bootstrapLoading, isFetching: bootstrapFetching } =
+  const { data: bootstrap, isLoading: bootstrapLoading } =
     useGetDashboardBootstrapQuery(bootstrapChannelId, {
       skip: !userId || !bootstrapChannelId,
       refetchOnMountOrArgChange: true,
@@ -151,10 +151,23 @@ export default function AddUser() {
     return selectedChannel?.moderatorRole === "lead_moderator";
   }, [userId, selectedChannelId, selectedChannel]);
 
-  const botStatus = bootstrap?.botStatus;
-  const botStatusLoading = bootstrapLoading || (bootstrapFetching && !botStatus);
+  const channelId = selectedChannelId || userId;
 
-  const waitingFirstStatus = botStatusLoading && !botStatus;
+  const {
+    data: liveBotStatus,
+    isLoading: liveStatusLoading,
+    isFetching: liveStatusFetching,
+    isError: liveStatusError,
+    error: liveStatusErrorObj,
+    refetch: refetchBotStatus,
+  } = useGetBotChannelStatusQuery(channelId, {
+    skip: !channelId,
+  });
+
+  const botStatus = liveBotStatus ?? bootstrap?.botStatus;
+  const liveStatusPending = (liveStatusLoading || liveStatusFetching) && liveBotStatus == null;
+  const liveStatusUnavailable = liveStatusError && liveBotStatus == null;
+
   const subscribed = Boolean(botStatus?.subscribed);
 
   const needsEligibilityCheck =
@@ -295,59 +308,46 @@ export default function AddUser() {
             </div>
           )}
 
-          {waitingFirstStatus ? (
+          {liveStatusPending ? (
             <p className={s.hint}>Проверка статуса…</p>
+          ) : liveStatusUnavailable ? (
+            <div className={s.statusUnavailable}>
+              <p className={s.err} role="alert">
+                {pickApiErrorMessage(liveStatusErrorObj, "Не удалось загрузить статус бота")}
+              </p>
+              <button
+                type="button"
+                className={s.retryButton}
+                onClick={() => void refetchBotStatus()}
+              >
+                Повторить
+              </button>
+            </div>
           ) : (
             <div className={s.actions}>
-              {botStatus != null ? (
-                botStatus.subscribed ? (
-                  <button
-                    type="button"
-                    className={s.buttonDanger}
-                    disabled={addState.isLoading || removeState.isLoading || !selectedChannelId}
-                    onClick={() => void handleRemove()}
-                  >
-                    {removeState.isLoading ? "Отключение…" : "Отключить бота"}
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    className={s.buttonPrimary}
-                    disabled={
-                      addState.isLoading ||
-                      removeState.isLoading ||
-                      !selectedChannelId ||
-                      !canConnectBot
-                    }
-                    onClick={() => void handleAdd()}
-                  >
-                    {addState.isLoading ? "Подключение…" : "Подключить бота"}
-                  </button>
-                )
+              {botStatus?.subscribed ? (
+                <button
+                  type="button"
+                  className={s.buttonDanger}
+                  disabled={addState.isLoading || removeState.isLoading || !selectedChannelId}
+                  onClick={() => void handleRemove()}
+                >
+                  {removeState.isLoading ? "Отключение…" : "Отключить бота"}
+                </button>
               ) : (
-                <>
-                  <button
-                    type="button"
-                    className={s.buttonPrimary}
-                    disabled={
-                      addState.isLoading ||
-                      removeState.isLoading ||
-                      !selectedChannelId ||
-                      !canConnectBot
-                    }
-                    onClick={() => void handleAdd()}
-                  >
-                    {addState.isLoading ? "Подключение…" : "Подключить бота"}
-                  </button>
-                  <button
-                    type="button"
-                    className={s.buttonDanger}
-                    disabled={addState.isLoading || removeState.isLoading || !selectedChannelId}
-                    onClick={() => void handleRemove()}
-                  >
-                    {removeState.isLoading ? "Отключение…" : "Отключить бота"}
-                  </button>
-                </>
+                <button
+                  type="button"
+                  className={s.buttonPrimary}
+                  disabled={
+                    addState.isLoading ||
+                    removeState.isLoading ||
+                    !selectedChannelId ||
+                    !canConnectBot
+                  }
+                  onClick={() => void handleAdd()}
+                >
+                  {addState.isLoading ? "Подключение…" : "Подключить бота"}
+                </button>
               )}
             </div>
           )}
@@ -382,7 +382,6 @@ export default function AddUser() {
   );
 
   const renderSection = () => {
-    const channelId = selectedChannelId || userId;
     const isActivated = activatedSections.has(activeSection);
 
     switch (activeSection) {

@@ -2,22 +2,8 @@ import { useGetBotChannelStatusQuery } from "~/api";
 import { PanelSkeleton } from "~/components/dashboard/PanelSkeleton";
 import { useAdaptivePolling } from "~/hooks/useAdaptivePolling";
 import { useChannelStatusStream } from "~/hooks/useChannelStatusStream";
+import { pickApiErrorMessage } from "~/lib/api-error-message";
 import s from "./BotStatusPanel.module.css";
-
-function statusMessage(error: unknown): string {
-  if (error && typeof error === "object" && "data" in error) {
-    const data = (error as { data?: unknown }).data;
-    if (data && typeof data === "object") {
-      const d = data as { message?: string; error?: string; unavailable?: boolean };
-      if (d.unavailable) {
-        return d.message || "Сервер бота не настроен (RAILWAY_BOT_URL / BOT_API_SECRET).";
-      }
-      if (d.message) return String(d.message);
-      if (d.error) return String(d.error);
-    }
-  }
-  return "Не удалось загрузить статус";
-}
 
 type Props = {
   channelId: string;
@@ -47,7 +33,10 @@ export function BotStatusPanel({ channelId, pollActive = true }: Props) {
       <section className={s.panel}>
         <h2 className={s.panelTitle}>Статус бота</h2>
         <p className={s.errorBox} role="alert">
-          {statusMessage(error)}
+          {pickApiErrorMessage(error, "Не удалось загрузить статус бота")}
+        </p>
+        <p className={s.meta}>
+          Пока статус недоступен, подключение и отключение бота временно скрыты.
         </p>
         <button type="button" className={s.retry} onClick={() => void refetch()}>
           Повторить

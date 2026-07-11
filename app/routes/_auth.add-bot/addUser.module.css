@@ -152,6 +152,35 @@
   font-size: 0.86rem;
 }
 
+.statusUnavailable {
+  margin-top: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  align-items: flex-start;
+}
+
+.statusUnavailable .err {
+  margin: 0;
+  width: 100%;
+}
+
+.retryButton {
+  padding: 0.45rem 1rem;
+  border: 1px solid var(--border-neon);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 110, 199, 0.1);
+  color: var(--neon-pink-soft);
+  font-weight: 700;
+  font-size: 0.86rem;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.retryButton:hover {
+  background: rgba(255, 110, 199, 0.2);
+}
+
 .eligibilityBox {
   margin: 0.75rem 0 0;
   padding: 0.7rem 0.85rem;
