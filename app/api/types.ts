@@ -173,7 +173,8 @@ export type DashboardBootstrapResponse = {
     login: string;
   };
   managedChannels: ManagedChannel[];
-  botStatus: BotChannelStatus;
+  botStatus: BotChannelStatus | null;
+  botStatusError?: { error: string; code?: string } | null;
   eligibility?: ChannelEligibilityResponse | null;
 };
 

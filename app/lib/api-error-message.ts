@@ -29,6 +29,15 @@ export function pickApiErrorMessage(error: unknown, fallback = "Ошибка з�
           "Не удалось подключиться к серверу бота. Повторите через несколько секунд."
         );
       }
+      if (d.code === "BOT_REQUEST_TIMEOUT") {
+        return d.message || "Сервер бота не ответил вовремя. Повторите запрос.";
+      }
+      if (d.code === "BOT_UNREACHABLE" || d.code === "BOT_NETWORK_ERROR") {
+        return d.message || "Сервер бота недоступен.";
+      }
+      if (d.code === "BOT_NOT_CONFIGURED") {
+        return d.message || "Сервер бота не настроен на API gateway.";
+      }
       if (d.code === "STREAM_PROXY_FAILED") {
         return d.message || "Ошибка потока обновления статуса.";
       }

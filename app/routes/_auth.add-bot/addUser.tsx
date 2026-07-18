@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useState, type ReactNo
 import {
   useAddBotToChannelMutation,
   useGetBotChannelStatusQuery,
+  useGetChannelEligibilityQuery,
   useGetDashboardBootstrapQuery,
   useRemoveBotFromChannelMutation,
   type ChannelEligibilityResponse,
@@ -173,13 +174,42 @@ export default function AddUser() {
   const needsEligibilityCheck =
     canManageBotConnection && Boolean(selectedChannelId) && botStatus?.subscribed !== true;
 
-  const eligibility = needsEligibilityCheck ? bootstrap?.eligibility ?? undefined : undefined;
-  const eligibilityLoading = needsEligibilityCheck && bootstrapLoading && eligibility === undefined;
-  const eligibilityError = false;
+  const bootstrapEligibility = needsEligibilityCheck ? bootstrap?.eligibility ?? undefined : undefined;
+  const needEligibilityFetch =
+    needsEligibilityCheck && Boolean(selectedChannelId) && bootstrapEligibility == null && !bootstrapLoading;
 
-  const canConnectBot =
-    !needsEligibilityCheck ||
-    (eligibility?.success === true && eligibility.eligible === true);
+  const {
+    data: fetchedEligibility,
+    isLoading: eligibilityFetching,
+    isError: eligibilityFetchError,
+    error: eligibilityFetchErrorObj,
+    refetch: refetchEligibility,
+  } = useGetChannelEligibilityQuery(selectedChannelId, {
+    skip: !needEligibilityFetch,
+  });
+
+  /** Bootstrap embeds eligibility without `success`; dedicated endpoint adds `success: true`. */
+  const eligibility: ChannelEligibilityResponse | undefined = needsEligibilityCheck
+    ? bootstrapEligibility
+      ? {
+          ...bootstrapEligibility,
+          success: true,
+          eligible: Boolean(bootstrapEligibility.eligible),
+        }
+      : fetchedEligibility
+    : undefined;
+
+  const eligibilityLoading =
+    needsEligibilityCheck &&
+    ((bootstrapLoading && bootstrapEligibility == null) ||
+      (needEligibilityFetch && eligibilityFetching && !fetchedEligibility));
+
+  const eligibilityFailed =
+    needsEligibilityCheck &&
+    !eligibilityLoading &&
+    (eligibilityFetchError || eligibility == null || typeof eligibility.eligible !== "boolean");
+
+  const canConnectBot = !needsEligibilityCheck || eligibility?.eligible === true;
 
   useEffect(() => {
     if (managedChannels.length > 0) {
@@ -273,10 +303,21 @@ export default function AddUser() {
             >
               {eligibilityLoading ? (
                 <p className={s.eligibilityTitle}>Проверка канала…</p>
-              ) : eligibilityError || !eligibility?.success ? (
+              ) : eligibilityFailed || !eligibility ? (
                 <>
                   <p className={s.eligibilityTitle}>Не удалось проверить канал</p>
-                  <p className={s.eligibilityMeta}>Повторите позже.</p>
+                  <p className={s.eligibilityMeta}>
+                    {eligibilityFetchError
+                      ? pickApiErrorMessage(eligibilityFetchErrorObj, "Повторите позже.")
+                      : "Повторите позже."}
+                  </p>
+                  <button
+                    type="button"
+                    className={s.retryButton}
+                    onClick={() => void refetchEligibility()}
+                  >
+                    Повторить
+                  </button>
                 </>
               ) : eligibility.eligible ? (
                 <>
