@@ -1,8 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
-import {
-  useGetChannelAiModelQuery,
-  usePatchChannelAiModelMutation,
-} from "~/api";
+import { useGetChannelAiModelQuery } from "~/api";
 import { PanelSkeleton } from "~/components/dashboard/PanelSkeleton";
 import s from "./ChannelAiModelPanel.module.css";
 
@@ -23,69 +19,26 @@ function pickFetchError(error: unknown): string {
   return "Не удалось загрузить настройки модели";
 }
 
-function modelKey(provider: string, model: string): string {
-  return `${provider}:${model}`;
-}
-
+/**
+ * Read-only: model is fixed via server env (AI_DEFAULT_PROVIDER / AI_DEFAULT_MODEL).
+ * Channel-level changes are disabled on BY VPS (DeepSeek-only).
+ */
 export function ChannelAiModelPanel({ channelId, subscribed }: Props) {
-  const { data, error, isLoading, isError, isFetching } = useGetChannelAiModelQuery(channelId, {
+  const { data, error, isLoading, isError } = useGetChannelAiModelQuery(channelId, {
     skip: !channelId || !subscribed,
   });
-  const [patchModel, patchState] = usePatchChannelAiModelMutation();
-  const [draftKey, setDraftKey] = useState("");
-
-  useEffect(() => {
-    if (data?.success && data.provider && data.model) {
-      setDraftKey(modelKey(data.provider, data.model));
-    }
-  }, [data?.channelId, data?.provider, data?.model, data?.success]);
-
-  const options = useMemo(() => {
-    if (!data?.availableModels?.length) return [];
-    return data.availableModels.map((item) => ({
-      key: modelKey(item.provider, item.model),
-      label: item.label,
-      provider: item.provider,
-      model: item.model,
-      enabled: item.enabled,
-      description: item.description,
-    }));
-  }, [data?.availableModels]);
-
-  const busy = patchState.isLoading || (isFetching && !data);
-  const savedKey = data?.success ? modelKey(data.provider, data.model) : "";
-  const unchanged = draftKey === savedKey;
-
-  const selectedOption = options.find((o) => o.key === draftKey);
-  const providerUnavailable = selectedOption && !selectedOption.enabled;
-
-  const handleSave = async () => {
-    if (!channelId || unchanged || busy || !selectedOption) return;
-    try {
-      await patchModel({
-        channelId,
-        provider: selectedOption.provider,
-        model: selectedOption.model,
-      }).unwrap();
-    } catch {
-      /* RTK Query */
-    }
-  };
 
   if (!subscribed) {
     return (
       <section className={s.panel} aria-label="AI-модель">
         <h2 className={s.title}>AI-модель</h2>
-        <p className={s.muted}>
-          После подключения бота можно выбрать модель для ответов @TsundereChanAI, !baka и связанных функций на этом
-          канале.
-        </p>
+        <p className={s.muted}>Подключите бота, чтобы увидеть модель, заданную на сервере.</p>
       </section>
     );
   }
 
   if (isLoading && !data) {
-    return <PanelSkeleton title="AI-модель" rows={3} />;
+    return <PanelSkeleton title="AI-модель" rows={2} />;
   }
 
   if (isError || !data?.success) {
@@ -99,61 +52,23 @@ export function ChannelAiModelPanel({ channelId, subscribed }: Props) {
     );
   }
 
+  const catalogLabel =
+    data.availableModels?.find((m) => m.provider === data.provider && m.model === data.model)?.label ??
+    `${data.provider} / ${data.model}`;
+
   return (
     <section className={s.panel} aria-label="AI-модель">
       <h2 className={s.title}>AI-модель</h2>
       <p className={s.lead}>
-        Модель для этого канала: ответы через <strong>@TsundereChanAI</strong>, <strong>!baka</strong>
-        {data.isDefault ? " Сейчас используется модель по умолчанию." : null}
+        Модель задаётся на сервере и не меняется из панели (ограничение площадки / единый DeepSeek).
       </p>
-      <select
-        className={s.select}
-        value={draftKey}
-        onChange={(e) => setDraftKey(e.target.value)}
-        disabled={busy || options.length === 0}
-        aria-label="Выбор AI-модели"
-      >
-        {options.map((opt) => (
-          <option key={opt.key} value={opt.key} disabled={!opt.enabled}>
-            {opt.label}
-            {!opt.enabled ? " (ключ API не настроен на сервере)" : ""}
-          </option>
-        ))}
-      </select>
-      {selectedOption?.description ? (
-        <p className={s.hint}>{selectedOption.description}</p>
-      ) : null}
-      {providerUnavailable ? (
-        <p className={s.warn} role="status">
-          Проблема с API-ключом провайдера. Выберите другую модель.
-        </p>
-      ) : null}
-      <div className={s.metaRow}>
-        <p className={s.hint}>
-          Текущая: {data.provider} / {data.model}
-          {!unchanged ? " · есть несохранённые изменения" : null}
-        </p>
-        <div className={s.actions}>
-          <button
-            type="button"
-            className={s.save}
-            disabled={busy || unchanged || providerUnavailable}
-            onClick={() => void handleSave()}
-          >
-            {patchState.isLoading ? "Сохранение…" : "Сохранить"}
-          </button>
-        </div>
-      </div>
-      {patchState.isSuccess && !patchState.isLoading && unchanged && (
-        <p className={s.ok} role="status">
-          Сохранено. Следующие ответы бота будут использовать выбранную модель.
-        </p>
-      )}
-      {patchState.isError && (
-        <p className={s.err} role="alert">
-          {pickFetchError(patchState.error)}
-        </p>
-      )}
+      <p className={s.hint}>
+        Текущая: <strong>{catalogLabel}</strong>
+        {data.isDefault ? " · значение по умолчанию" : null}
+      </p>
+      <p className={s.hint}>
+        {data.provider} / {data.model}
+      </p>
     </section>
   );
 }

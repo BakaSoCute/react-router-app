@@ -30,9 +30,6 @@ const ChatModulesPanel = lazy(() =>
 const ChannelAiPromptPanel = lazy(() =>
   import("./ChannelAiPromptPanel").then((m) => ({ default: m.ChannelAiPromptPanel }))
 );
-const ChannelAiModelPanel = lazy(() =>
-  import("./ChannelAiModelPanel").then((m) => ({ default: m.ChannelAiModelPanel }))
-);
 const CustomCommandsPanel = lazy(() =>
   import("./CustomCommandsPanel").then((m) => ({ default: m.CustomCommandsPanel }))
 );
@@ -53,14 +50,13 @@ function renderLazyPanel(panel: ReactNode) {
   return <Suspense fallback={null}>{panel}</Suspense>;
 }
 
-type SectionId = "overview" | "modules" | "ai-prompt" | "ai-model" | "commands" | "timers" | "clips" | "moderation";
+type SectionId = "overview" | "modules" | "ai-prompt" | "commands" | "timers" | "clips" | "moderation";
 
 const NAV = [
   { id: "overview" as const, label: "Обзор", icon: <IconPlug size={16} /> },
   { id: "modules" as const, label: "Модули", icon: <IconModule size={16} /> },
   { id: "moderation" as const, label: "Модерация", icon: <IconShield size={16} /> },
   { id: "ai-prompt" as const, label: "AI-промт", icon: <IconBrain size={16} /> },
-  { id: "ai-model" as const, label: "AI-модель", icon: <IconBrain size={16} /> },
   { id: "commands" as const, label: "Команды", icon: <IconCommand size={16} /> },
   { id: "timers" as const, label: "Таймеры", icon: <IconTimer size={16} /> },
   { id: "clips" as const, label: "Клипы", icon: <IconClip size={16} /> },
@@ -440,10 +436,6 @@ export default function AddUser() {
       case "ai-prompt":
         return isActivated
           ? renderLazyPanel(<ChannelAiPromptPanel channelId={channelId} subscribed={subscribed} />)
-          : null;
-      case "ai-model":
-        return isActivated
-          ? renderLazyPanel(<ChannelAiModelPanel channelId={channelId} subscribed={subscribed} />)
           : null;
       case "commands":
         return isActivated
